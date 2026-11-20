@@ -5,6 +5,7 @@ import threading
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import structlog
 from sqlalchemy import Engine, text
@@ -13,6 +14,7 @@ from klipin.config import get_config
 from klipin.db.backup import daily_backup
 from klipin.db.models import JsonText, utcnow
 from klipin.db.session import get_engine
+from klipin.worker import pipeline
 from klipin.worker.context import JobContext
 from klipin.worker.handlers import get_handler
 from klipin.worker.process import JobCancelled
@@ -38,6 +40,9 @@ RETURNING id, job_type, source_stream_id, clip_id, upload_id, purpose, preview_a
 """)
 
 
+JOB_INFO_COLS = "id, job_type, source_stream_id, scope_start_ms"
+
+
 def _iso(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -49,19 +54,23 @@ def mark_interrupted(engine: Engine, exclude: set[int] = frozenset(),
     cutoff = _iso(now - timedelta(seconds=STALE_S))
     ids = ",".join(str(i) for i in exclude) or "-1"
     with engine.begin() as conn:
-        result = conn.execute(text(
+        rows = conn.execute(text(
             "UPDATE jobs SET status = 'failed', error_message = :msg, finished_at = :now, "
             "updated_at = :now WHERE status = 'running' AND id NOT IN (" + ids + ") "
-            "AND (worker_heartbeat_at IS NULL OR worker_heartbeat_at < :cutoff)"),
-            {"msg": INTERRUPTED, "now": _iso(now), "cutoff": cutoff})
-        return result.rowcount
+            "AND (worker_heartbeat_at IS NULL OR worker_heartbeat_at < :cutoff) "
+            "RETURNING " + JOB_INFO_COLS),
+            {"msg": INTERRUPTED, "now": _iso(now), "cutoff": cutoff}).mappings().all()
+        for row in rows:
+            pipeline.on_failed(conn, SimpleNamespace(**row), INTERRUPTED)
+        return len(rows)
 
 
 def claim(engine: Engine, heavy: bool) -> JobContext | None:
     with engine.begin() as conn:
         row = conn.execute(CLAIM_SQL, {"now": utcnow(), "heavy": int(heavy)}).mappings().first()
-    if row is None:
-        return None
+        if row is None:
+            return None
+        pipeline.on_start(conn, SimpleNamespace(**row))
     data = dict(row)
     data["checkpoint"] = _json.process_result_value(data["checkpoint"], None) or {}
     return JobContext(engine=engine, **data)
@@ -78,10 +87,6 @@ def max_heavy_jobs(engine: Engine) -> int:
     return max(1, int(_json.process_result_value(value, None) or 1))
 
 
-def on_success(conn, ctx: JobContext) -> None:
-    """Dipanggil dalam transaksi yang sama dengan penandaan `succeeded` (pipeline, T-015)."""
-
-
 def _finish(engine: Engine, ctx: JobContext, status: str, error: str | None = None) -> None:
     now = utcnow()
     with engine.begin() as conn:
@@ -95,8 +100,11 @@ def _finish(engine: Engine, ctx: JobContext, status: str, error: str | None = No
             "updated_at = :now, progress_pct = CASE WHEN :st = 'succeeded' THEN 100 "
             "ELSE progress_pct END WHERE id = :id AND status = 'running'"),
             {"st": status, "err": error, "now": now, "id": ctx.id})
+        # Job berikutnya & status Stream Sumber ikut transaksi yang sama (§3.1).
         if result.rowcount and status == "succeeded":
-            on_success(conn, ctx)
+            pipeline.on_success(conn, ctx)
+        elif result.rowcount:
+            pipeline.on_failed(conn, ctx, error)
 
 
 def run_job(ctx: JobContext) -> None:
@@ -191,11 +199,14 @@ class Worker:
         ids = list(self.active)
         if ids:
             with self.engine.begin() as conn:
-                conn.execute(text(
+                rows = conn.execute(text(
                     f"UPDATE jobs SET status = 'failed', error_message = :msg, "
                     f"finished_at = :now, updated_at = :now "
-                    f"WHERE id IN ({','.join(map(str, ids))}) AND status = 'running'"),
-                    {"msg": INTERRUPTED, "now": utcnow()})
+                    f"WHERE id IN ({','.join(map(str, ids))}) AND status = 'running' "
+                    f"RETURNING {JOB_INFO_COLS}"),
+                    {"msg": INTERRUPTED, "now": utcnow()}).mappings().all()
+                for row in rows:
+                    pipeline.on_failed(conn, SimpleNamespace(**row), INTERRUPTED)
         for a in self.active.values():
             a.thread.join(timeout=10)
 
