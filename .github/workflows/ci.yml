@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3  # setup-uv tidak menerbitkan tag mayor
       - run: uv sync --locked
       - name: Lint backend
         run: uv run ruff check .
