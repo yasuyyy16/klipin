@@ -24,6 +24,7 @@ class JobResponse(BaseModel):
     finished_at: str | None
     created_at: str
     updated_at: str
+    stream_title: str | None = None
 
 
 class JobDetailResponse(JobResponse):

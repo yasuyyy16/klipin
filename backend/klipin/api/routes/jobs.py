@@ -1,6 +1,8 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Query
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from klipin import jobs
 from klipin.api.deps import DbSession
@@ -12,9 +14,19 @@ from klipin.api.schemas.jobs import (
     JobResponse,
     JobRetryResponse,
 )
+from klipin.db.models import Job, SourceStream
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 JOB_STATUSES = {"queued", "running", "succeeded", "failed", "cancelled"}
+
+
+def _with_titles(db: Session, jobs_: list[Job], model: type[JobResponse]) -> list:
+    """Tambahkan judul Stream Sumber agar P-06 bisa menampilkan objek tiap Job."""
+    ids = {j.source_stream_id for j in jobs_ if j.source_stream_id}
+    titles = dict(db.execute(select(SourceStream.id, SourceStream.title)
+                             .where(SourceStream.id.in_(ids))).all()) if ids else {}
+    return [model.model_validate(j).model_copy(update={"stream_title": titles.get(
+        j.source_stream_id)}) for j in jobs_]
 
 
 @router.get("")
@@ -26,13 +38,13 @@ def list_jobs(db: DbSession, status: str | None = None, source_stream_id: int | 
         raise ApiError(400, "VALIDATION_ERROR", "Input tidak valid.",
                        {"status": "Nilai tidak valid."})
     items, total = jobs.list_jobs(db, statuses, source_stream_id, limit, offset)
-    return JobListResponse(items=[JobResponse.model_validate(j) for j in items], total=total)
+    return JobListResponse(items=_with_titles(db, items, JobResponse), total=total)
 
 
 @router.get("/{job_id}")
 def get_job(job_id: int, db: DbSession) -> JobDetailResponse:
     # shortcut: usage_estimate untuk Job yang menunggu konfirmasi ditambahkan di T-030.
-    return JobDetailResponse.model_validate(jobs.get_job(db, job_id))
+    return _with_titles(db, [jobs.get_job(db, job_id)], JobDetailResponse)[0]
 
 
 @router.post("/{job_id}/cancel")

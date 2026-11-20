@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "./client";
+import { api, post } from "./client";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 
@@ -17,6 +17,7 @@ export interface Job {
   started_at: string | null;
   finished_at: string | null;
   created_at: string;
+  stream_title: string | null;
 }
 
 export interface JobDetail extends Job {
@@ -44,5 +45,25 @@ export function useActiveJobs() {
   return useQuery({
     queryKey: activeJobsKey,
     queryFn: () => api<JobList>("/jobs?status=queued,running&limit=200"),
+  });
+}
+
+export const cancelJob = (id: number) => post<Job>(`/jobs/${id}/cancel`);
+export const retryJob = (id: number) => post<{ job: Job }>(`/jobs/${id}/retry`);
+export const confirmJob = (id: number, proceed: boolean) =>
+  post<Job>(`/jobs/${id}/confirm`, { proceed, range: null });
+
+export function useJobs(status: string) {
+  return useQuery({
+    queryKey: ["jobs", "list", status],
+    queryFn: () => api<JobList>(`/jobs?limit=200${status ? `&status=${status}` : ""}`),
+  });
+}
+
+export function useJobDetail(id: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["job", id],
+    queryFn: () => api<JobDetail>(`/jobs/${id}`),
+    enabled,
   });
 }

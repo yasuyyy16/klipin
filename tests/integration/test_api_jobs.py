@@ -45,6 +45,7 @@ def test_list_filters_and_paginates(api, db):
     assert body["total"] == 2
     assert [j["id"] for j in body["items"]] == [b, a]  # terbaru dulu
     assert body["items"][0]["awaiting_confirmation"] is False
+    assert body["items"][0]["stream_title"] == "Stream uji"
     page = api.get("/api/v1/jobs", params={"limit": 1, "offset": 1}).json()
     assert page["total"] == 3 and len(page["items"]) == 1
     assert api.get("/api/v1/jobs", params={"source_stream_id": 99}).json()["total"] == 0

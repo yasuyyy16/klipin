@@ -22,7 +22,8 @@ _connections = 0
 
 QUERIES = {
     "job": "SELECT id, job_type, status, progress_pct, stage, source_stream_id, clip_id, "
-           "awaiting_confirmation, error_message, updated_at FROM jobs WHERE updated_at >= :since",
+           "awaiting_confirmation, error_message, started_at, finished_at, updated_at FROM jobs "
+           "WHERE updated_at >= :since",
     "stream": "SELECT id, status, error_message, updated_at FROM source_streams "
               "WHERE updated_at >= :since",
     "clip": "SELECT id, source_stream_id, origin, status, created_at, updated_at FROM clips "

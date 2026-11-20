@@ -52,7 +52,8 @@ def test_tracker_emits_only_changes_after_connect(db):
     assert event == "job.updated"
     assert data == {"id": 2, "job_type": "download", "status": "queued", "progress_pct": 0,
                     "stage": None, "source_stream_id": 1, "clip_id": None,
-                    "awaiting_confirmation": False, "error_message": None}
+                    "awaiting_confirmation": False, "error_message": None,
+                    "started_at": None, "finished_at": None}
 
     # perubahan kedua di detik yang sama tetap terdeteksi
     exec_sql(db, "UPDATE jobs SET progress_pct = 40, stage = 'x' WHERE id = 2")

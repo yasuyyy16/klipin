@@ -17,6 +17,8 @@ function applyJobUpdate(qc: QueryClient, job: Partial<Job> & { id: number }) {
     return { ...list, items };
   });
   qc.setQueryData<Job>(["job", job.id], (j) => (j ? { ...j, ...job } : j));
+  // log_tail tidak ikut event: ambil ulang detail jika sedang dibuka.
+  qc.invalidateQueries({ queryKey: ["job", job.id] });
   // Job baru atau keluar/masuk filter (mis. selesai): ambil ulang daftar dari REST.
   if (!known || job.status === "succeeded" || job.status === "failed" || job.status === "cancelled") {
     qc.invalidateQueries({ queryKey: ["jobs"] });
