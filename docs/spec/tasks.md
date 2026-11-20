@@ -6,7 +6,7 @@
 ## Fase 0: Setup
 - [x] **T-001** Inisialisasi monorepo sesuai 04-arsitektur.md §6: `pyproject.toml` (uv, Python 3.11+, entry point `klipin`), `backend/klipin/`, `frontend/` (React 18 + Vite + TypeScript + Tailwind + TanStack Query), `tests/`, `docs/spec/`. _(setup)_
   - Selesai jika: `uv sync` dan `cd frontend && pnpm install && pnpm build` berhasil tanpa error.
-- [ ] **T-002** CLI `klipin` dengan subperintah `start | api | worker | doctor | update-ytdlp` (kerangka; `start` menjalankan API + Worker sebagai dua proses). _(setup)_
+- [x] **T-002** CLI `klipin` dengan subperintah `start | api | worker | doctor | update-ytdlp` (kerangka; `start` menjalankan API + Worker sebagai dua proses). _(setup)_
   - Selesai jika: `uv run klipin --help` menampilkan semua subperintah; `uv run klipin start` menyalakan dua proses dan Ctrl+C mematikan keduanya.
 - [ ] **T-003** `config.py` membaca env (04-arsitektur.md §8.2) + `.env.example` berisi **semua** variabel di tabel itu (termasuk `KLIPIN_PROVIDERS`, `KLIPIN_OAUTH_REDIRECT_BASE`, kredensial Google/TikTok/Meta kosong). `.env` masuk `.gitignore`. _(setup)_
   - Selesai jika: semua env var terdaftar di `.env.example` dengan keterangan; nilai default sesuai tabel.
