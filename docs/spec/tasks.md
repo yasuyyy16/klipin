@@ -14,7 +14,7 @@
   - Selesai jika: log tercipta; unit test memastikan string mirip key tersamarkan.
 - [x] **T-005** [P] `klipin doctor`: cek Python, FFmpeg/FFprobe (libx264 & libass), yt-dlp, SQLite ≥ 3.35 + JSON1, keyring, ruang disk, port bebas. _(FR-021)_
   - Selesai jika: output tabel hijau/merah per item; FFmpeg tanpa libass terdeteksi merah.
-- [ ] **T-006** [P] CI GitHub Actions (ubuntu + windows): lint (ruff, eslint), `pytest` dengan `KLIPIN_PROVIDERS=fake`, build frontend. _(setup)_
+- [x] **T-006** [P] CI GitHub Actions (ubuntu + windows): lint (ruff, eslint), `pytest` dengan `KLIPIN_PROVIDERS=fake`, build frontend. _(setup)_
   - Selesai jika: pipeline hijau pada commit kosong-fitur.
 - [ ] **T-007** [P] Siapkan fixture uji 09-testing.md §5 (video 30 detik gaming/podcast/IRL/tanpa wajah/tanpa audio/rusak, audio 25 menit, chat jsonl, folder `fixtures/providers/`). _(setup)_
   - Selesai jika: fixture ada di `tests/fixtures/` dengan README sumber/lisensi dan ground truth Region Cam (JSON).
