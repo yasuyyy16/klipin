@@ -1,16 +1,48 @@
-import logging
+import secrets
+from collections.abc import Sequence
 from pathlib import Path
 
-from fastapi import FastAPI
+import structlog
+from fastapi import APIRouter, FastAPI
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from klipin.api.errors import ApiError, install_error_handlers
+from klipin.api.security import LocalOnlyMiddleware
+from klipin.config import get_config
+
 DIST_DIR = Path(__file__).resolve().parents[3] / "frontend" / "dist"
+log = structlog.get_logger(__name__)
 
-app = FastAPI(title="Klipin")
 
-if DIST_DIR.is_dir():
-    app.mount("/", StaticFiles(directory=DIST_DIR, html=True), name="spa")
-else:
-    logging.getLogger(__name__).warning(
-        "frontend/dist tidak ditemukan; jalankan `cd frontend && pnpm build`."
-    )
+def create_app(token: str | None = None, dist_dir: Path = DIST_DIR,
+               port: int | None = None, routers: Sequence[APIRouter] = ()) -> FastAPI:
+    token = token or secrets.token_urlsafe(32)
+    port = port or get_config().klipin_port
+    app = FastAPI(title="Klipin")
+    app.state.token = token
+    install_error_handlers(app)
+    app.add_middleware(LocalOnlyMiddleware, token=token, port=port)
+    # Router API wajib dipasang sebelum mount SPA di "/" yang menangkap semua path.
+    for router in routers:
+        app.include_router(router)
+
+    @app.get("/", include_in_schema=False)
+    def index() -> HTMLResponse:
+        page = dist_dir / "index.html"
+        if not page.is_file():
+            raise ApiError(503, "INTERNAL_ERROR",
+                           "Antarmuka belum dibuild. Jalankan `cd frontend && pnpm build`.")
+        meta = f'<meta name="klipin-token" content="{token}">'
+        html = page.read_text(encoding="utf-8").replace("</head>", meta + "</head>", 1)
+        # Token berganti tiap start, jadi halaman tidak boleh di-cache.
+        return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+    if dist_dir.is_dir():
+        app.mount("/", StaticFiles(directory=dist_dir), name="spa")
+    else:
+        log.warning("frontend/dist tidak ditemukan; jalankan `cd frontend && pnpm build`.")
+    return app
+
+
+app = create_app()

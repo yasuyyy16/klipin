@@ -1,6 +1,7 @@
 """CLI `klipin`: start | api | worker | doctor | update-ytdlp."""
 
 import argparse
+import socket
 import subprocess
 import sys
 import time
@@ -14,6 +15,29 @@ def _prepare_db() -> None:
     prepare_database(get_engine(), get_config().klipin_home)
 
 
+def bind_sockets(hosts: list[str], port: int) -> list[socket.socket]:
+    """Buka socket untuk tiap alamat loopback (BR-012); minimal satu harus berhasil."""
+    import structlog
+
+    socks = []
+    for host in hosts:
+        family = socket.AF_INET6 if ":" in host else socket.AF_INET
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        if family == socket.AF_INET6:
+            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+        try:
+            sock.bind((host, port))
+        except OSError as exc:
+            sock.close()
+            structlog.get_logger(__name__).warning("gagal bind", host=host, port=port,
+                                                   error=str(exc))
+            continue
+        socks.append(sock)
+    if not socks:
+        raise SystemExit(f"Port {port} tidak bisa dipakai. Klipin mungkin sudah berjalan.")
+    return socks
+
+
 def cmd_api(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -23,14 +47,15 @@ def cmd_api(args: argparse.Namespace) -> int:
     cfg = get_config()
     setup_logging(cfg, "api")
     _prepare_db()
-    # shortcut: hanya bind alamat pertama; bind 127.0.0.1 + ::1 sekaligus di T-011.
-    uvicorn.run(
-        "klipin.api.app:app",
-        host=cfg.klipin_host[0],
-        port=cfg.klipin_port,
-        reload=args.reload,
-        log_config=None,  # pakai logging Klipin (JSON + penyamaran)
-    )
+    if args.reload:
+        # shortcut: mode dev --reload hanya bind alamat pertama (uvicorn reload tidak
+        # menerima banyak socket); jalankan tanpa --reload untuk bind 127.0.0.1 + ::1.
+        uvicorn.run("klipin.api.app:app", host=cfg.klipin_host[0], port=cfg.klipin_port,
+                    reload=True, log_config=None)
+        return 0
+    socks = bind_sockets(cfg.klipin_host, cfg.klipin_port)
+    config = uvicorn.Config("klipin.api.app:app", log_config=None)  # logging Klipin
+    uvicorn.Server(config).run(sockets=socks)
     return 0
 
 

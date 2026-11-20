@@ -28,7 +28,7 @@
   - Selesai jika: 6 preset, 3 gaya bawaan, semua kunci settings ada setelah migrasi; menjalankan ulang tidak menggandakan.
 - [x] **T-010** Backup harian `klipin.db` (SQLite online backup, simpan 7) + backup sebelum migrasi. _(NFR-010)_
   - Selesai jika: tes memajukan jam → file backup tercipta & dirotasi.
-- [ ] **T-011** Aplikasi FastAPI: bind loopback `127.0.0.1` + `::1`, token sesi acak disisipkan ke `index.html`, middleware wajib `X-Klipin-Token` (atau `?t=` untuk media/SSE), cek header `Host`, tanpa CORS, format error standar 06-api.md §1. _(ADR-009, BR-012, NFR-005)_
+- [x] **T-011** Aplikasi FastAPI: bind loopback `127.0.0.1` + `::1`, token sesi acak disisipkan ke `index.html`, middleware wajib `X-Klipin-Token` (atau `?t=` untuk media/SSE), cek header `Host`, tanpa CORS, format error standar 06-api.md §1. _(ADR-009, BR-012, NFR-005)_
   - Selesai jika: TC-070, TC-071, TC-072 lulus.
 - [ ] **T-012** Wrapper keyring (`secrets.py`) + fallback `.env` dengan flag peringatan; endpoint `PUT/DELETE /secrets/{name}`, `POST /secrets/{name}/test` (penyedia palsu dulu). _(FR-021, ADR-007)_
   - Selesai jika: TC-042 lulus; nilai rahasia tidak pernah muncul di respons/log.
