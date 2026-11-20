@@ -10,7 +10,7 @@
   - Selesai jika: `uv run klipin --help` menampilkan semua subperintah; `uv run klipin start` menyalakan dua proses dan Ctrl+C mematikan keduanya.
 - [x] **T-003** `config.py` membaca env (04-arsitektur.md §8.2) + `.env.example` berisi **semua** variabel di tabel itu (termasuk `KLIPIN_PROVIDERS`, `KLIPIN_OAUTH_REDIRECT_BASE`, kredensial Google/TikTok/Meta kosong). `.env` masuk `.gitignore`. _(setup)_
   - Selesai jika: semua env var terdaftar di `.env.example` dengan keterangan; nilai default sesuai tabel.
-- [ ] **T-004** [P] Logging terstruktur `structlog` JSON ke `{KLIPIN_HOME}/logs/klipin.log` (rotasi 10 MB × 5) + filter yang menyamarkan pola API key/token. _(setup, NFR-005)_
+- [x] **T-004** [P] Logging terstruktur `structlog` JSON ke `{KLIPIN_HOME}/logs/klipin.log` (rotasi 10 MB × 5) + filter yang menyamarkan pola API key/token. _(setup, NFR-005)_
   - Selesai jika: log tercipta; unit test memastikan string mirip key tersamarkan.
 - [ ] **T-005** [P] `klipin doctor`: cek Python, FFmpeg/FFprobe (libx264 & libass), yt-dlp, SQLite ≥ 3.35 + JSON1, keyring, ruang disk, port bebas. _(FR-021)_
   - Selesai jika: output tabel hijau/merah per item; FFmpeg tanpa libass terdeteksi merah.

@@ -4,8 +4,10 @@ version = "0.1.0"
 description = "Klipin: ubah livestream jadi klip vertikal 9:16 (aplikasi lokal)"
 requires-python = ">=3.11"
 dependencies = [
+    "concurrent-log-handler>=0.9.31",
     "fastapi>=0.165.0",
     "pydantic-settings>=2.16.3",
+    "structlog>=26.1.0",
     "uvicorn[standard]>=0.54.0",
 ]
 

@@ -10,18 +10,27 @@ def cmd_api(args: argparse.Namespace) -> int:
     import uvicorn
 
     from klipin.config import get_config
+    from klipin.logging import setup_logging
 
     cfg = get_config()
+    setup_logging(cfg, "api")
     # shortcut: hanya bind alamat pertama; bind 127.0.0.1 + ::1 sekaligus di T-011.
     uvicorn.run(
-        "klipin.api.app:app", host=cfg.klipin_host[0], port=cfg.klipin_port, reload=args.reload
+        "klipin.api.app:app",
+        host=cfg.klipin_host[0],
+        port=cfg.klipin_port,
+        reload=args.reload,
+        log_config=None,  # pakai logging Klipin (JSON + penyamaran)
     )
     return 0
 
 
 def cmd_worker(args: argparse.Namespace) -> int:
+    from klipin.config import get_config
+    from klipin.logging import setup_logging
     from klipin.worker.loop import run
 
+    setup_logging(get_config(), "worker")
     return run()
 
 
