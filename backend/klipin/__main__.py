@@ -57,8 +57,12 @@ def cmd_start(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
-    print("klipin doctor belum diimplementasikan (T-005).", file=sys.stderr)
-    return 1
+    from klipin.config import get_config
+    from klipin.doctor import print_report, run_checks
+
+    checks = run_checks(get_config())
+    print_report(checks)
+    return 0 if all(c.ok for c in checks) else 1
 
 
 def cmd_update_ytdlp(args: argparse.Namespace) -> int:

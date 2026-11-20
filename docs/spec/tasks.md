@@ -12,7 +12,7 @@
   - Selesai jika: semua env var terdaftar di `.env.example` dengan keterangan; nilai default sesuai tabel.
 - [x] **T-004** [P] Logging terstruktur `structlog` JSON ke `{KLIPIN_HOME}/logs/klipin.log` (rotasi 10 MB × 5) + filter yang menyamarkan pola API key/token. _(setup, NFR-005)_
   - Selesai jika: log tercipta; unit test memastikan string mirip key tersamarkan.
-- [ ] **T-005** [P] `klipin doctor`: cek Python, FFmpeg/FFprobe (libx264 & libass), yt-dlp, SQLite ≥ 3.35 + JSON1, keyring, ruang disk, port bebas. _(FR-021)_
+- [x] **T-005** [P] `klipin doctor`: cek Python, FFmpeg/FFprobe (libx264 & libass), yt-dlp, SQLite ≥ 3.35 + JSON1, keyring, ruang disk, port bebas. _(FR-021)_
   - Selesai jika: output tabel hijau/merah per item; FFmpeg tanpa libass terdeteksi merah.
 - [ ] **T-006** [P] CI GitHub Actions (ubuntu + windows): lint (ruff, eslint), `pytest` dengan `KLIPIN_PROVIDERS=fake`, build frontend. _(setup)_
   - Selesai jika: pipeline hijau pada commit kosong-fitur.
