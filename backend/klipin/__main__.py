@@ -5,14 +5,17 @@ import subprocess
 import sys
 import time
 
-HOST = "127.0.0.1"
-PORT = 8765
-
 
 def cmd_api(args: argparse.Namespace) -> int:
     import uvicorn
 
-    uvicorn.run("klipin.api.app:app", host=HOST, port=PORT, reload=args.reload)
+    from klipin.config import get_config
+
+    cfg = get_config()
+    # shortcut: hanya bind alamat pertama; bind 127.0.0.1 + ::1 sekaligus di T-011.
+    uvicorn.run(
+        "klipin.api.app:app", host=cfg.klipin_host[0], port=cfg.klipin_port, reload=args.reload
+    )
     return 0
 
 
@@ -69,10 +72,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    from pydantic import ValidationError
+
     try:
         return args.func(args)
     except KeyboardInterrupt:
         return 0
+    except ValidationError as exc:
+        for err in exc.errors():
+            print(f"Konfigurasi tidak valid ({err['loc'][0]}): {err['msg']}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

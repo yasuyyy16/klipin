@@ -5,6 +5,7 @@ description = "Klipin: ubah livestream jadi klip vertikal 9:16 (aplikasi lokal)"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.165.0",
+    "pydantic-settings>=2.16.3",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -30,3 +31,6 @@ dev = [
     "pytest>=9.2.0",
     "ruff>=0.17.6",
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["klipin"]
