@@ -139,9 +139,9 @@ def check_port(hosts: list[str], port: int) -> Check:
     return Check(f"Port {port}", True, "bebas di " + ", ".join(hosts))
 
 
-def run_checks(cfg: Config) -> list[Check]:
+def run_checks(cfg: Config, include_port: bool = True) -> list[Check]:
     ffmpeg, ffprobe = find_ffmpeg(cfg)
-    return [
+    checks = [
         check_python(),
         *check_ffmpeg(ffmpeg),
         check_ffprobe(ffprobe),
@@ -149,8 +149,10 @@ def run_checks(cfg: Config) -> list[Check]:
         check_sqlite(),
         check_keyring(),
         check_disk(cfg.klipin_home),
-        check_port(cfg.klipin_host, cfg.klipin_port),
     ]
+    if include_port:
+        checks.append(check_port(cfg.klipin_host, cfg.klipin_port))
+    return checks
 
 
 def print_report(checks: list[Check]) -> None:

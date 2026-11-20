@@ -46,7 +46,7 @@
   - Selesai jika: navigasi antar halaman kosong P-01…P-07 berjalan; indikator Job berubah saat Job dummy berjalan.
 - [x] **T-019** [P] P-06 Antrean Job (tabel, log, Batalkan/Coba lagi, dialog konfirmasi pemakaian). _(FR-022, FR-023)_
   - Selesai jika: Job dummy terlihat progresnya real-time dan bisa dibatalkan dari UI.
-- [ ] **T-020** [P] P-07 Pengaturan tab Umum, API & Penyedia, Skor Highlight, Sistem (hasil `system/health` + `update-ytdlp`). Endpoint `GET /system/health`, `POST /system/update-ytdlp`. _(FR-021)_
+- [x] **T-020** [P] P-07 Pengaturan tab Umum, API & Penyedia, Skor Highlight, Sistem (hasil `system/health` + `update-ytdlp`). Endpoint `GET /system/health`, `POST /system/update-ytdlp`. _(FR-021)_
   - Selesai jika: API key bisa diisi & dites (penyedia palsu), bobot tersimpan, hasil doctor tampil.
 
 **Checkpoint 1:** Klipin jalan dengan DB tersedia (seed), Job dummy berjalan/dibatalkan/dicoba ulang dari UI dengan progres real-time, API terlindungi token (TC-070–TC-072 lulus), pengaturan & rahasia tersimpan.

@@ -105,8 +105,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def cmd_update_ytdlp(args: argparse.Namespace) -> int:
-    print("klipin update-ytdlp belum diimplementasikan (T-020).", file=sys.stderr)
-    return 1
+    from klipin import system
+
+    print("Memperbarui yt-dlp…", flush=True)
+    try:
+        result = system.update_ytdlp()
+    except system.UpdateError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print(result["message"])
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
