@@ -34,7 +34,7 @@
   - Selesai jika: TC-042 lulus; nilai rahasia tidak pernah muncul di respons/log.
 - [x] **T-013** `GET/PATCH /settings` dengan validasi 02-requirements.md §3 (bobot total 1,00, Jeda Chat, dst.). _(FR-021)_
   - Selesai jika: TC-041 lulus; respons memuat semua kunci seperti contoh 06-api.md.
-- [ ] **T-014** Worker loop: klaim atomik (04-arsitektur.md §3.1), `max_heavy_jobs` + 1 slot ringan, heartbeat 10 detik, penandaan Job terputus saat start, pembatalan subprocess ≤ 10 detik, registri handler per Jenis Job, `checkpoint` & `log_tail`. _(FR-023, ADR-002)_
+- [x] **T-014** Worker loop: klaim atomik (04-arsitektur.md §3.1), `max_heavy_jobs` + 1 slot ringan, heartbeat 10 detik, penandaan Job terputus saat start, pembatalan subprocess ≤ 10 detik, registri handler per Jenis Job, `checkpoint` & `log_tail`. _(FR-023, ADR-002)_
   - Selesai jika: Job dummy berjalan, bisa dibatalkan, dan TC-046 (kill Worker lalu start ulang) lulus dengan Job dummy.
 - [ ] **T-015** Orkestrator pipeline (`pipeline.py`): aturan "Job sukses → Job berikutnya" sesuai tabel 04-arsitektur.md §3.1, dalam transaksi yang sama dengan penandaan `succeeded`; pembaruan status Stream Sumber. _(FR-001, FR-005, FR-012)_
   - Selesai jika: unit test rantai `download → detect_layout + transcribe → score_highlights → ready` dengan handler palsu.
