@@ -42,7 +42,7 @@
   - Selesai jika: TC-045 lulus (dengan Job dummy); retry membuat Job baru dengan checkpoint tersalin.
 - [x] **T-017** SSE `GET /events` (polling DB 1 detik, heartbeat 15 detik, maks. 5 koneksi) dengan event 06-api.md. _(FR-023)_
   - Selesai jika: TC-047 lulus.
-- [ ] **T-018** [P] Kerangka frontend: router hash, klien API (header token), hook SSE dengan reconnect, header global (indikator Job aktif), design token 08-ui-ux.md §5, komponen toast/modal/konfirmasi, daftar pintasan `?`. _(setup)_
+- [x] **T-018** [P] Kerangka frontend: router hash, klien API (header token), hook SSE dengan reconnect, header global (indikator Job aktif), design token 08-ui-ux.md §5, komponen toast/modal/konfirmasi, daftar pintasan `?`. _(setup)_
   - Selesai jika: navigasi antar halaman kosong P-01…P-07 berjalan; indikator Job berubah saat Job dummy berjalan.
 - [ ] **T-019** [P] P-06 Antrean Job (tabel, log, Batalkan/Coba lagi, dialog konfirmasi pemakaian). _(FR-022, FR-023)_
   - Selesai jika: Job dummy terlihat progresnya real-time dan bisa dibatalkan dari UI.
