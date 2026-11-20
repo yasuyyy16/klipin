@@ -22,7 +22,7 @@
 **Checkpoint 0:** `uv run klipin start` menyalakan API kosong di `http://127.0.0.1:8765` yang menyajikan halaman React kosong; `klipin doctor` jalan; CI hijau.
 
 ## Fase 1: Fondasi (database, Job, keamanan lokal, pengaturan)
-- [ ] **T-008** SQLAlchemy + Alembic, sesi SQLite (WAL, `foreign_keys=ON`, `busy_timeout=5000`); migrasi awal berisi **seluruh** DDL 05-database.md §5 (termasuk `jobs.purpose`). _(setup)_
+- [x] **T-008** SQLAlchemy + Alembic, sesi SQLite (WAL, `foreign_keys=ON`, `busy_timeout=5000`); migrasi awal berisi **seluruh** DDL 05-database.md §5 (termasuk `jobs.purpose`). _(setup)_
   - Selesai jika: `alembic upgrade head` dari nol berhasil; tes constraint: CHECK durasi Klip, BR-009 unik per platform, `purpose`, Region Cam satu pemilik, menolak data tidak valid.
 - [ ] **T-009** Seed 05-database.md §6.2 (Preset Layout, Gaya Subtitle, `settings`) sebagai migrasi data idempoten. _(FR-007, FR-017, FR-021)_
   - Selesai jika: 6 preset, 3 gaya bawaan, semua kunci settings ada setelah migrasi; menjalankan ulang tidak menggandakan.
