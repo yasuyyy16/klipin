@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from klipin import secrets
 from klipin.api.app import create_app
-from klipin.api.deps import get_db
+from klipin.api.deps import get_db, get_db_engine
 from klipin.config import get_config
 from klipin.db.migrate import upgrade
 from klipin.db.session import make_engine
@@ -93,6 +93,7 @@ def api(engine, home, memory_keyring, tmp_path):
             yield session
 
     app.dependency_overrides[get_db] = _db
+    app.dependency_overrides[get_db_engine] = lambda: engine
     client = TestClient(app, base_url=f"http://127.0.0.1:{PORT}", headers=AUTH,
                         raise_server_exceptions=False)
     yield client

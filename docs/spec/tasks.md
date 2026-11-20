@@ -40,7 +40,7 @@
   - Selesai jika: unit test rantai `download → detect_layout + transcribe → score_highlights → ready` dengan handler palsu.
 - [x] **T-016** API Job: `GET /jobs`, `GET /jobs/{id}`, `POST /jobs/{id}/cancel`, `/retry` (Job baru + `retry_of_job_id` + salin checkpoint), `/confirm`. _(FR-022, FR-023)_
   - Selesai jika: TC-045 lulus (dengan Job dummy); retry membuat Job baru dengan checkpoint tersalin.
-- [ ] **T-017** SSE `GET /events` (polling DB 1 detik, heartbeat 15 detik, maks. 5 koneksi) dengan event 06-api.md. _(FR-023)_
+- [x] **T-017** SSE `GET /events` (polling DB 1 detik, heartbeat 15 detik, maks. 5 koneksi) dengan event 06-api.md. _(FR-023)_
   - Selesai jika: TC-047 lulus.
 - [ ] **T-018** [P] Kerangka frontend: router hash, klien API (header token), hook SSE dengan reconnect, header global (indikator Job aktif), design token 08-ui-ux.md §5, komponen toast/modal/konfirmasi, daftar pintasan `?`. _(setup)_
   - Selesai jika: navigasi antar halaman kosong P-01…P-07 berjalan; indikator Job berubah saat Job dummy berjalan.
