@@ -24,9 +24,9 @@ def run(engine, sql, *params):
 
 @pytest.fixture
 def base_rows(engine):
-    """Preset, gaya, Kanal, Stream Sumber minimal untuk FK."""
-    run(engine, "INSERT INTO layout_presets (id, code, name) VALUES (1, 'gaming', 'G')")
-    run(engine, "INSERT INTO subtitle_styles (id, name, mode) VALUES (1, 'S', 'sentence')")
+    """Kanal + Stream Sumber minimal untuk FK; preset & gaya id 1 berasal dari seed (T-009)."""
+    assert run(engine, "SELECT id FROM layout_presets WHERE id = 1") == [(1,)]
+    assert run(engine, "SELECT id FROM subtitle_styles WHERE id = 1") == [(1,)]
     run(engine, "INSERT INTO channels (id, platform, name) VALUES (1, 'youtube', 'Kanal')")
     run(engine, "INSERT INTO source_streams (id, channel_id, source_type, platform, source_url, "
                 "title) VALUES (1, 1, 'vod_url', 'youtube', 'https://youtu.be/x', 'Stream')")

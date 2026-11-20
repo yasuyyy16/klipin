@@ -4,10 +4,11 @@ Revision ID: 0001
 Revises:
 """
 
-import re
 from pathlib import Path
 
 from alembic import op
+
+from klipin.db.migrate import execute_sql_file
 
 revision = "0001"
 down_revision = None
@@ -23,12 +24,7 @@ TABLES_REVERSED = [
 
 
 def upgrade() -> None:
-    sql = SQL_FILE.read_text(encoding="utf-8")
-    conn = op.get_bind()
-    # Satu pernyataan per execute (driver sqlite3 menolak banyak pernyataan sekaligus).
-    for stmt in re.split(r";[ \t]*(?:--[^\n]*)?\n", sql):
-        if re.sub(r"--[^\n]*", "", stmt).strip():
-            conn.exec_driver_sql(stmt)
+    execute_sql_file(SQL_FILE)
 
 
 def downgrade() -> None:
