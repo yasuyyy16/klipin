@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic_core import PydanticCustomError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 log = structlog.get_logger(__name__)
@@ -12,6 +13,14 @@ STATUS_CODES = {400: "VALIDATION_ERROR", 403: "FORBIDDEN_ORIGIN", 404: "NOT_FOUN
                 409: "INVALID_STATE", 502: "UPSTREAM_ERROR"}
 STATUS_MESSAGES = {404: "Data tidak ditemukan.", 403: "Sesi tidak valid. Muat ulang halaman Klipin."}
 INTERNAL_MESSAGE = "Terjadi kesalahan di Klipin. Detail ada di log."
+
+
+USER_ERROR_TYPE = "klipin_user_error"
+
+
+def user_error(message: str) -> PydanticCustomError:
+    """Error validasi Pydantic yang pesannya (Bahasa Indonesia) diteruskan ke Pengguna."""
+    return PydanticCustomError(USER_ERROR_TYPE, message)
 
 
 class ApiError(Exception):
@@ -32,6 +41,8 @@ def error_response(status: int, code: str, message: str,
 
 
 def _field_message(err: dict) -> str:
+    if err.get("type") == USER_ERROR_TYPE:
+        return err["msg"]
     return "Wajib diisi." if err.get("type") == "missing" else "Nilai tidak valid."
 
 
@@ -42,12 +53,14 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_req: Request, exc: RequestValidationError) -> JSONResponse:
-        fields = {}
+        fields: dict[str, str] = {}
         for err in exc.errors():
             loc = [str(p) for p in err["loc"] if p not in ("body", "query", "path")]
-            fields[".".join(loc) or "body"] = _field_message(err)
-        log.info("validasi gagal", errors=exc.errors())
-        return error_response(400, "VALIDATION_ERROR", "Input tidak valid.", fields)
+            fields.setdefault(".".join(loc) or "body", _field_message(err))
+        log.info("validasi gagal", fields=fields)
+        custom = [m for m in fields.values() if m not in ("Wajib diisi.", "Nilai tidak valid.")]
+        message = custom[0] if len(fields) == 1 and custom else "Input tidak valid."
+        return error_response(400, "VALIDATION_ERROR", message, fields)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_req: Request, exc: StarletteHTTPException) -> JSONResponse:
