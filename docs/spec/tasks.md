@@ -30,7 +30,7 @@
   - Selesai jika: tes memajukan jam → file backup tercipta & dirotasi.
 - [x] **T-011** Aplikasi FastAPI: bind loopback `127.0.0.1` + `::1`, token sesi acak disisipkan ke `index.html`, middleware wajib `X-Klipin-Token` (atau `?t=` untuk media/SSE), cek header `Host`, tanpa CORS, format error standar 06-api.md §1. _(ADR-009, BR-012, NFR-005)_
   - Selesai jika: TC-070, TC-071, TC-072 lulus.
-- [ ] **T-012** Wrapper keyring (`secrets.py`) + fallback `.env` dengan flag peringatan; endpoint `PUT/DELETE /secrets/{name}`, `POST /secrets/{name}/test` (penyedia palsu dulu). _(FR-021, ADR-007)_
+- [x] **T-012** Wrapper keyring (`secrets.py`) + fallback `.env` dengan flag peringatan; endpoint `PUT/DELETE /secrets/{name}`, `POST /secrets/{name}/test` (penyedia palsu dulu). _(FR-021, ADR-007)_
   - Selesai jika: TC-042 lulus; nilai rahasia tidak pernah muncul di respons/log.
 - [ ] **T-013** `GET/PATCH /settings` dengan validasi 02-requirements.md §3 (bobot total 1,00, Jeda Chat, dst.). _(FR-021)_
   - Selesai jika: TC-041 lulus; respons memuat semua kunci seperti contoh 06-api.md.

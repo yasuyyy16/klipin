@@ -8,6 +8,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from klipin.api.errors import ApiError, install_error_handlers
+from klipin.api.routes import secrets as secrets_routes
+from klipin.api.routes import settings as settings_routes
 from klipin.api.security import LocalOnlyMiddleware
 from klipin.config import get_config
 
@@ -24,7 +26,7 @@ def create_app(token: str | None = None, dist_dir: Path = DIST_DIR,
     install_error_handlers(app)
     app.add_middleware(LocalOnlyMiddleware, token=token, port=port)
     # Router API wajib dipasang sebelum mount SPA di "/" yang menangkap semua path.
-    for router in routers:
+    for router in (settings_routes.router, secrets_routes.router, *routers):
         app.include_router(router)
 
     @app.get("/", include_in_schema=False)
