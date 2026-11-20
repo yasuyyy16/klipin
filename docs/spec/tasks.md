@@ -26,7 +26,7 @@
   - Selesai jika: `alembic upgrade head` dari nol berhasil; tes constraint: CHECK durasi Klip, BR-009 unik per platform, `purpose`, Region Cam satu pemilik, menolak data tidak valid.
 - [x] **T-009** Seed 05-database.md §6.2 (Preset Layout, Gaya Subtitle, `settings`) sebagai migrasi data idempoten. _(FR-007, FR-017, FR-021)_
   - Selesai jika: 6 preset, 3 gaya bawaan, semua kunci settings ada setelah migrasi; menjalankan ulang tidak menggandakan.
-- [ ] **T-010** Backup harian `klipin.db` (SQLite online backup, simpan 7) + backup sebelum migrasi. _(NFR-010)_
+- [x] **T-010** Backup harian `klipin.db` (SQLite online backup, simpan 7) + backup sebelum migrasi. _(NFR-010)_
   - Selesai jika: tes memajukan jam → file backup tercipta & dirotasi.
 - [ ] **T-011** Aplikasi FastAPI: bind loopback `127.0.0.1` + `::1`, token sesi acak disisipkan ke `index.html`, middleware wajib `X-Klipin-Token` (atau `?t=` untuk media/SSE), cek header `Host`, tanpa CORS, format error standar 06-api.md §1. _(ADR-009, BR-012, NFR-005)_
   - Selesai jika: TC-070, TC-071, TC-072 lulus.

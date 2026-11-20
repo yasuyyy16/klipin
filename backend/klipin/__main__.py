@@ -6,6 +6,14 @@ import sys
 import time
 
 
+def _prepare_db() -> None:
+    from klipin.config import get_config
+    from klipin.db.backup import prepare_database
+    from klipin.db.session import get_engine
+
+    prepare_database(get_engine(), get_config().klipin_home)
+
+
 def cmd_api(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -14,6 +22,7 @@ def cmd_api(args: argparse.Namespace) -> int:
 
     cfg = get_config()
     setup_logging(cfg, "api")
+    _prepare_db()
     # shortcut: hanya bind alamat pertama; bind 127.0.0.1 + ::1 sekaligus di T-011.
     uvicorn.run(
         "klipin.api.app:app",
@@ -35,6 +44,11 @@ def cmd_worker(args: argparse.Namespace) -> int:
 
 
 def cmd_start(args: argparse.Namespace) -> int:
+    from klipin.config import get_config
+    from klipin.logging import setup_logging
+
+    setup_logging(get_config(), "start")
+    _prepare_db()  # sekali sebelum API & Worker jalan, agar tidak berebut migrasi
     procs = [
         subprocess.Popen([sys.executable, "-m", "klipin", name]) for name in ("api", "worker")
     ]
