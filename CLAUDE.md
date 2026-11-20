@@ -18,6 +18,7 @@ Semua spesifikasi ada di `docs/spec/`. Baca dokumen yang relevan **sebelum** men
 | Kasus uji TC-xxx, fixture, kriteria rilis | `docs/spec/09-testing.md` |
 | Fase & urutan | `docs/spec/10-roadmap.md` |
 | Daftar pekerjaan | `docs/spec/tasks.md` |
+| Status kerja, keputusan di luar spesifikasi, jebakan lingkungan | `docs/CATATAN-SESI.md` |
 
 ## Tech stack
 | Layer | Pilihan |
@@ -47,12 +48,13 @@ Semua spesifikasi ada di `docs/spec/`. Baca dokumen yang relevan **sebelum** men
 - Lint: `uv run ruff check . && cd frontend && pnpm lint`
 
 ## Cara kerja
-1. Ambil task berikutnya yang belum dicentang di `docs/spec/tasks.md`. Kerjakan **satu task per langkah**.
+1. Baca `docs/CATATAN-SESI.md`, lalu ambil task berikutnya yang belum dicentang di `docs/spec/tasks.md`. Kerjakan **satu task per langkah**.
 2. Sebelum menulis kode, baca FR yang dirujuk task itu beserta kriteria penerimaannya, BR terkait, dan TC di `09-testing.md`.
 3. Setelah selesai: jalankan tes, pastikan "Selesai jika" terpenuhi, centang task, lalu ringkas apa yang berubah.
 4. Jika spesifikasi kurang jelas atau saling bertentangan: **berhenti dan tanya**. Jangan menebak. Usulkan perubahan ke dokumen spesifikasi terkait (naikkan versi + baris Riwayat Perubahan).
 5. Jangan menambah fitur di luar task yang sedang dikerjakan. Fitur v1.1 (unggah otomatis, analisis live bertahap) jangan dikerjakan sebelum MVP selesai.
 6. Jangan menjalankan tes yang memanggil API berbayar atau memposting ke akun sungguhan. Pakai `KLIPIN_PROVIDERS=fake` dan fixture `tests/fixtures/`.
+7. Keputusan yang diambil di luar spesifikasi, pekerjaan yang ditunda ke task lain, dan perubahan posisi kerja dicatat di `docs/CATATAN-SESI.md` pada commit yang sama.
 
 ## Aturan wajib
 - Pakai nama entitas, status, dan enum **persis** seperti di Kamus Istilah PRD dan `05-database.md` §6 (mis. `candidate`, `approved`, `rendered`; `manual`/`auto`).
