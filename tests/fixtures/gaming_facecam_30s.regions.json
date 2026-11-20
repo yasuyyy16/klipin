@@ -1,0 +1,17 @@
+{
+  "frame": {
+    "width": 960,
+    "height": 540
+  },
+  "note": "Ground truth Region Cam (format cam_regions, ternormalisasi 0-1). Posisi tetap selama 30 detik karena facecam ditempel generator.",
+  "suggested_preset": "gaming",
+  "regions": [
+    {
+      "role": "cam",
+      "x": 0.65,
+      "y": 0.525926,
+      "w": 0.333333,
+      "h": 0.444444
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "frame": {
+    "width": 960,
+    "height": 540
+  },
+  "note": "face_a = panel kiri, face_b = panel kanan; speakers = siapa yang terdengar.",
+  "suggested_preset": "podcast",
+  "regions": [
+    {
+      "role": "face_a",
+      "x": 0.0,
+      "y": 0.0,
+      "w": 0.5,
+      "h": 1.0
+    },
+    {
+      "role": "face_b",
+      "x": 0.5,
+      "y": 0.0,
+      "w": 0.5,
+      "h": 1.0
+    }
+  ],
+  "speakers": [
+    {
+      "start_ms": 0,
+      "end_ms": 5000,
+      "speaker": "S1"
+    },
+    {
+      "start_ms": 5000,
+      "end_ms": 10000,
+      "speaker": "S2"
+    },
+    {
+      "start_ms": 10000,
+      "end_ms": 15000,
+      "speaker": "S1"
+    },
+    {
+      "start_ms": 15000,
+      "end_ms": 20000,
+      "speaker": "S2"
+    },
+    {
+      "start_ms": 20000,
+      "end_ms": 25000,
+      "speaker": "S1"
+    },
+    {
+      "start_ms": 25000,
+      "end_ms": 30000,
+      "speaker": "S2"
+    }
+  ]
+}

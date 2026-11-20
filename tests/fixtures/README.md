@@ -1,14 +1,18 @@
 # Fixture uji
 
-Data uji untuk 09-testing.md §5. Semua file di folder ini dibuat sendiri oleh
-`generate.py` dari generator bawaan FFmpeg (`testsrc2`, `anullsrc`, `anoisesrc`) dan
-Python. Tidak ada materi pihak ketiga, jadi bebas dipakai (milik proyek Klipin).
+Data uji untuk 09-testing.md §5, dibuat oleh `generate.py`. Fixture sintetis berasal dari
+generator bawaan FFmpeg (`testsrc2`, `anullsrc`, `anoisesrc`) dan Python. Fixture berwajah
+memakai potongan dua video **domain publik** dari Wikimedia Commons (lihat tabel sumber).
 
 Membuat ulang (butuh FFmpeg di PATH):
 
 ```
 uv run python tests/fixtures/generate.py
+uv run python tests/fixtures/generate.py --only-faces --faces SASHA.webm RIMPAC.webm
 ```
+
+Video sumber wajah tidak disimpan di repo. Unduh file aslinya dari halaman Commons di
+tabel sumber; `generate.py` menolak file yang SHA1-nya berbeda.
 
 | File | Isi | Sumber & lisensi | Dipakai di |
 |---|---|---|---|
@@ -22,11 +26,35 @@ Catatan: lantai "audio tenang" berupa hening digital, bukan nada pelan, karena n
 membuat FLAC lebih dari 6 MB. Bagi Sinyal Audio (loudness per detik lalu z-score) bentuknya
 setara: rendah dan rata, lalu satu lonjakan.
 
+## Fixture berwajah
+
+Semua 30 dtk, 960×540, 30 fps, H.264 + AAC. Hanya potongan wawancara menghadap kamera yang
+dipakai (b-roll dibuang), disambung lalu diulang sampai 30 detik.
+
+| File | Isi | Dipakai di |
+|---|---|---|
+| `gaming_facecam_30s.mp4` | Pola uji (pengganti layar game) + facecam 320×240 berisi wajah sumber A di pojok kanan bawah, posisi tetap; audio = suara sumber A | TC-015, TC-018 |
+| `gaming_facecam_30s.regions.json` | Ground truth Region Cam (format `cam_regions`, ternormalisasi 0–1): `cam` x 0,65, y 0,525926, w 0,333333, h 0,444444; saran preset `gaming` | TC-015 |
+| `podcast_two_faces_30s.mp4` | Panel kiri sumber A, panel kanan sumber B; yang terdengar bergantian tiap 5 dtk (kiri dulu) | TC-019 |
+| `podcast_two_faces_30s.regions.json` | `face_a` (panel kiri), `face_b` (panel kanan), jadwal pembicara `S1`/`S2` per 5 dtk | TC-019 |
+| `irl_moving_face_30s.mp4` | Wajah sumber B bergerak pelan kiri-kanan dan atas-bawah (jendela crop bergeser, periode 12 dtk dan 9 dtk) | preset `irl` |
+
+Sumber (keduanya karya pemerintah AS, domain publik):
+
+| | Judul di Wikimedia Commons | Pembuat | SHA1 | Potongan dipakai (dtk) |
+|---|---|---|---|---|
+| A | [Faces of Keen Sword - Tech Sgt Sasha Marceaux (1027106).webm](https://commons.wikimedia.org/wiki/File:Faces_of_Keen_Sword_-_Tech_Sgt_Sasha_Marceaux_(1027106).webm) | U.S. Army 314PAOC, Spc. Wesley Richardson | `9c022062c6565af5681c6d5a1343ef2a57a0e83a` | 5,6–10,3; 14,6–19,8; 24,9–30,8 |
+| B | [Faces of RIMPAC Philippines.webm](https://commons.wikimedia.org/wiki/File:Faces_of_RIMPAC_Philippines.webm) | U.S. Navy, PO2 Kory Alsberry | `bb6852df5f6f3a7aabe59c5171836117f3a06201` | 11,2–19,2; 25,8–29,2; 34,7–42,4 |
+
+Video ini menampilkan orang sungguhan. Pakai hanya sebagai data uji Klipin, jangan
+diunggah ulang sebagai konten.
+
+Pemeriksaan: lembar kontak satu frame per detik menunjukkan wajah ada di setiap detik
+ketiga video. Deteksi dengan MediaPipe dilakukan di T-031 (TC-015), karena MediaPipe 1.2.3
+butuh file model terpisah yang dipilih di task itu.
+
 ## Belum ada
 
 | File | Kenapa belum | Dipakai di |
 |---|---|---|
-| `gaming_facecam_30s.mp4` + `gaming_facecam_30s.regions.json` (ground truth Region Cam) | Butuh rekaman wajah sungguhan; MediaPipe tidak mendeteksi wajah sintetis. Menunggu keputusan sumber wajah | TC-015, TC-018 |
-| `podcast_two_faces_30s.mp4` | Sama: butuh dua wajah sungguhan | TC-019 |
-| `irl_moving_face_30s.mp4` | Sama: butuh satu wajah bergerak | preset `irl` |
 | `providers/*.json` | Lihat `providers/README.md` | tes kontrak adapter |

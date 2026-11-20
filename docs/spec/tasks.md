@@ -16,7 +16,7 @@
   - Selesai jika: output tabel hijau/merah per item; FFmpeg tanpa libass terdeteksi merah.
 - [x] **T-006** [P] CI GitHub Actions (ubuntu + windows): lint (ruff, eslint), `pytest` dengan `KLIPIN_PROVIDERS=fake`, build frontend. _(setup)_
   - Selesai jika: pipeline hijau pada commit kosong-fitur.
-- [ ] **T-007** [P] Siapkan fixture uji 09-testing.md §5 (video 30 detik gaming/podcast/IRL/tanpa wajah/tanpa audio/rusak, audio 25 menit, chat jsonl, folder `fixtures/providers/`). _(setup)_
+- [x] **T-007** [P] Siapkan fixture uji 09-testing.md §5 (video 30 detik gaming/podcast/IRL/tanpa wajah/tanpa audio/rusak, audio 25 menit, chat jsonl, folder `fixtures/providers/`). _(setup)_
   - Selesai jika: fixture ada di `tests/fixtures/` dengan README sumber/lisensi dan ground truth Region Cam (JSON).
 
 **Checkpoint 0:** `uv run klipin start` menyalakan API kosong di `http://127.0.0.1:8765` yang menyajikan halaman React kosong; `klipin doctor` jalan; CI hijau.
