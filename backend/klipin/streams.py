@@ -211,3 +211,16 @@ def inspect_response(session: Session, url: str) -> dict[str, Any]:
         "disk_free_bytes": disk_free_bytes(get_config().klipin_home),
     }
 
+
+
+def rescore(session: Session, stream_id: int) -> Job:
+    """FR-012: Job `score_highlights` dengan bobot terbaru, memakai cache `highlight_windows`."""
+    stream = get_stream(session, stream_id)
+    if stream.status != "ready":
+        raise ApiError(409, "INVALID_STATE",
+                       "Hitung ulang skor hanya bisa setelah stream selesai diproses.")
+    conn = session.connection()
+    pipeline.set_stream_status(conn, stream_id, "processing")
+    job_id = pipeline.create_job(conn, "score_highlights", stream_id)
+    session.commit()
+    return session.get(Job, job_id)

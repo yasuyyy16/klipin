@@ -51,3 +51,8 @@ def list_streams(db: DbSession, status: str | None = None,
 def get_stream(stream_id: int, db: DbSession) -> StreamDetailResponse:
     return StreamDetailResponse.model_validate(
         streams.detail(db, streams.get_stream(db, stream_id)))
+
+
+@router.post("/{stream_id}/rescore", status_code=202)
+def rescore_stream(stream_id: int, db: DbSession) -> dict:
+    return {"job": JobResponse.model_validate(streams.rescore(db, stream_id))}

@@ -2,7 +2,7 @@
 
 Skor = 100 × rata-rata Sinyal Audio dan Chat (Chat tidak ada → Audio). Kategori `hype` bila
 skor ≥ 70, `lucu` bila transkrip memuat "wkwk"/"haha", selain itu `lainnya`. Rentang saran =
-detik 5 s.d. (durasi jendela − 5). Perilaku bisa diskenariokan per `key` jendela:
+seluruh jendela. Perilaku bisa diskenariokan per `key` jendela:
 `invalid_times` (berapa kali respons tidak valid) atau `fail` (gagal permanen).
 """
 
@@ -35,8 +35,7 @@ class FakeJudge(HighlightJudge):
         length_s = (w.end_ms - w.start_ms) / 1000
         return Judgement(score=score, category=category,
                          reason="Penilaian uji dari angka sinyal.",
-                         suggested_start_s=min(5.0, length_s / 4),
-                         suggested_end_s=max(length_s - 5.0, length_s * 3 / 4),
+                         suggested_start_s=0.0, suggested_end_s=length_s,
                          title=f"Momen detik {w.start_ms // 1000}")
 
     def judge(self, window: WindowInput, *,

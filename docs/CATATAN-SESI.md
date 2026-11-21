@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-038.
+Terakhir diperbarui: 2026-11-21, setelah T-039.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-038 selesai; task berikutnya: **T-039** (handler `score_highlights` + Kandidat Klip + rescore).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-039 selesai (US-008 Kandidat Klip backend lengkap); task berikutnya: **T-040** (endpoint Klip).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (384 tes setelah T-038); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (398 tes setelah T-039); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -53,6 +53,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 31 | Sinyal Chat: ember 10 dtk setelah digeser mundur `chat_delay_ms` (offset < 0 diabaikan); bobot reaksi 1,5× dihitung ulang dari teks dengan `chat_reaction_words` saat skor (kolom `is_reaction` hanya hasil impor); rasio terhadap median ember ±150 dtk dengan lantai 1 pesan; sinyal = (rasio − 1)/4 dibatasi 0–1 (5× median = 1); sinyal jendela = ember tertinggi yang beririsan. BR-002 (`highlight/scoring.py`): tanpa chat → `w_chat` dibagi proporsional ke audio & LLM; LLM null → bobot audio+chat dinormalkan ulang dan `partial = true`; skor dibulatkan ke integer 0–100. Pembaca Pengaturan lewat Connection: `app_settings.value` | `highlight/chat_signal.py`, `highlight/scoring.py` | Menunggu; kalibrasi di T-062 |
 | 32 | Pra-seleksi BR-003 (`highlight/preselect.py`): jendela terakhir dipotong di akhir rentang, jendela < 15 dtk tidak dibuat (kecuali stream sangat pendek: 1 jendela); tanpa chat skor pra-seleksi = Audio saja; persentil 80 inklusif (nilai sama → ikut); sampel acak 5% = ceil(5% × sisa) dengan seed id Stream Sumber (hasil sama saat rescore); batas = ceil(jam × 120), yang dipertahankan: skor tertinggi lalu sampel acak; `store` menghapus jendela di luar set baru dan tidak menimpa kolom `llm_*`. `build_windows(start, end, …)` menerima rentang transkripsi (pemanggilnya T-039). Dependensi dev baru: `hypothesis` | `highlight/preselect.py` | Menunggu |
 | 33 | `HighlightJudge` (`providers/llm/`): SDK resmi `anthropic` 2.x, `messages.create` + `output_config.format` (JSON schema tanpa batas angka; batas dicek Pydantic: skor 0–100, kategori enum, `reason` ≤ 200, `title` ≤ 100 karakter); `max_tokens` 300 dan `effort: low` (kontrol biaya INT-05) — **risiko**: model yang thinking-nya selalu aktif bisa terpotong di 300 token (dianggap `invalid` lalu dicoba ulang 1×); perlu dicek dengan panggilan sungguhan (butuh izin biaya). `max_tokens` terpotong → `invalid`; `refusal` → `failed` tanpa coba ulang; 429/5xx/529/jaringan → 3× backoff 2/4/8 + jitter (retry SDK dimatikan); 400/401/403/404 → `JudgeUnavailable` (seluruh Job memakai skor parsial, sesuai Fallback INT-05). Tanpa API key LLM atau tanpa `llm_models.judge_highlight` → `JudgeUnavailable` (bukan gagal Job). Tes koneksi Anthropic: `GET /v1/models?limit=1` (tanpa biaya token). Prompt: transkrip dipangkas 6.000 karakter (±1.500 token); "±90 detik" ditafsirkan pemanggil (T-039). Server-side `fallbacks` tidak dipakai karena model dipilih Pengguna. Dependensi baru: `anthropic` | `providers/llm/` | Menunggu |
+| 34 | `score_highlights`: rentang jendela = `checkpoint.range` Job `transcribe` seluruh stream terakhir yang sukses (FR-022); bila `highlight_windows` sudah ada (rescore/coba ulang) sinyal & pra-seleksi tersimpan dipakai ulang tanpa dekode audio — perubahan Jeda Chat/kata reaksi baru berlaku pada stream yang dianalisis ulang dari awal. LLM hanya untuk jendela terpilih yang belum `done` (`invalid`/`failed` dicoba lagi saat rescore). Konteks transkrip = jendela ±15 dtk (≈ 90 dtk), waktu relatif awal jendela (bisa negatif). Koreksi BR-004: saran LLM dijepit ke jendela, < 15 dtk diperpanjang simetris lalu digeser masuk ke jendela, > 90 dtk dipendekkan di tengah. BR-005 juga menghindari Klip `auto` yang sudah direview (approved/rejected/rendering/rendered/render_failed); kuota BR-006 hanya untuk kandidat baru. Judul tanpa LLM: `"{Kanal atau judul stream} - mm:ss"` (h:mm:ss bila ≥ 1 jam); gaya subtitle = `default_subtitle_style`. Rescore: stream `ready` → `processing` → `ready`. `FakeJudge` menyarankan seluruh jendela | `highlight/candidates.py`, `worker/handlers/score_highlights.py`, `streams.rescore` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
@@ -65,7 +66,6 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | Analisis live per blok (scope transcribe/score) | v1.1 (FR-013) |
 | `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini."; tombol Rekam Live & checkbox "Analisis selama live" di P-01 | T-051, T-053 |
 | Transkripsi rentang (Penanda Live) belum mencegah kata ganda dengan transkripsi seluruh stream sesudahnya ("hanya rentang yang belum ditranskripsi") | T-051, T-052 |
-| `score_highlights` harus membatasi jendela ke rentang yang ditranskripsi (`checkpoint.range` Job transcribe terakhir) | T-037, T-039 |
 | Tombol "Pilih file dari komputer" di P-01 | T-054 |
 | Aksi "Hapus video sumber" / "Hapus stream" di P-02 | T-055 |
 | Badge "Kanal dikenal: preset X tersimpan" | T-034 |
