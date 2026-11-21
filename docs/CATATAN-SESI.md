@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-032.
+Terakhir diperbarui: 2026-11-21, setelah T-033.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-032 selesai; task berikutnya: **T-033** (jalur crop dinamis `irl` & `podcast`).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-033 selesai; task berikutnya: **T-034** (endpoint regions, channels, layout-presets, frame).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (321 tes setelah T-032); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (329 tes setelah T-033); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -47,6 +47,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 25 | FR-022: `transcribe` ditahan bila durasi > ambang konfirmasi **atau** > `max_audio_minutes_per_job` (batas berlaku walau konfirmasi mati); durasi tak diketahui → tidak ditahan. Perkiraan jendela LLM = round(jam × 120) (batas BR-003; cocok dengan contoh 06-api 2 j 10 m → 260), minimal 1. `usage_estimate` menambah `duration_ms`, `max_audio_ms`, `over_limit` (usul tambah ke 06-api.md). Rentang konfirmasi disimpan di `checkpoint.range` (bukan `scope_*`) agar Job tetap dianggap seluruh stream dan lanjut ke `score_highlights`; validasi: di dalam durasi, selesai > mulai, panjang ≤ batas. Konfirmasi tanpa rentang saat melebihi batas → 409. Setelah unduh, `duration_ms` diperbarui dari FFprobe file asli. GET /settings memuat `pricing_links`. P-04 menampilkan banner + dialog konfirmasi yang sama dengan P-06 | `usage.py`, `jobs.confirm_job`, `pipeline.on_success`, `handlers/download.py`, `components/UsageConfirmDialog.tsx` | Menunggu |
 | 26 | `detect_layout`: model BlazeFace + YuNet dibundel di `backend/klipin/layout/models/` (izin pemilik 2026-11-21; sumber, lisensi, SHA256 di README folder itu); per frame MediaPipe dulu, YuNet bila MediaPipe tidak menemukan wajah/gagal dimuat (tafsiran "fallback OpenCV DNN"). Sampel merata (lebar 960 px), minimal 10 untuk video pendek; frame dibaca dengan seek OpenCV, tanpa folder `frames/`. Ambang: tanpa wajah di ≥ 90% sampel → `center_crop`; ≥ 2 wajah di ≥ 50% sampel berwajah → `podcast` (bukan `split_two`) dengan `face_a`/`face_b` = wajah + 30%; satu wajah dengan sebaran pusat ≤ 8% dan luas < 25% → `gaming`; selain itu `irl` (tanpa region). Kotak `cam` = persegi panjang tepi panel yang **sisi terlemahnya** terkuat di peta gradien rata-rata antar-frame (cadangan: wajah + 40%); `content` = sisi frame di luar kolom cam bila lebarnya ≥ 50%, selain itu seluruh frame. Kanal dengan preset default: preset Kanal dipakai, region deteksi tetap disimpan untuk stream, kecocokan (IoU) dicatat di log Job. Pesan "Wajah tidak terdeteksi…" baru di log Job; tampil di UI pada T-041. Dependensi baru: `mediapipe` (membawa `opencv-contrib-python`), `numpy` | `layout/`, `worker/handlers/detect_layout.py` | Menunggu |
 | 27 | Filtergraph preset statis (`media/ffmpeg.py`): tiap panel *cover* (region dipotong di tengahnya ke rasio panel lalu di-scale tepat, tanpa `pad`), panel ditumpuk `vstack`; offset & ukuran crop selalu genap (offset ganjil menggeser chroma yuv420p). `split_two` memakai `split_pct` (seed 50). `custom`: urutan tumpukan = urutan region yang diberikan, 1 region → penuh, 2 region → `top_pct` (default 50, belum ada di seed); penyimpanan urutan menyusul di T-034/T-042. Region wajib tidak ada → jatuh ke `center_crop` dengan alasan (`LayoutPlan.fallback_reason`) | `media/ffmpeg.py` | Menunggu |
+| 28 | Jalur crop dinamis (`layout/crop_path.py`): jendela 9:16 setinggi frame; posisi per sampel 5 fps (dibaca berurutan dengan `grab`), diinterpolasi per frame 30 fps dan dikirim ke `crop` lewat `sendcmd` (1 perintah per frame). `irl`: median 1 dtk lalu batas kecepatan `max_pan_pct_per_s`; tanpa wajah → tahan posisi terakhir (awal: tengah). `podcast`: potongan langsung ke wajah pembicara aktif, tidak lebih sering dari `switch_hold_ms`; tanpa giliran bicara → tahan. Pemetaan pembicara → wajah memakai urutan (pembicara pertama ↔ wajah paling kiri) kecuali `speaker_faces` diberikan — belum ada pencocokan gerak bibir; keterbatasan ini perlu dicek di evaluasi T-062. Muat giliran bicara dari `transcript_segments` dikerjakan di T-046 | `layout/crop_path.py` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 

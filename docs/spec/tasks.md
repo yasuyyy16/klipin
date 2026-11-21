@@ -82,7 +82,7 @@
   - Selesai jika: TC-015, TC-016, TC-017 lulus.
 - [x] **T-032** Modul `media/ffmpeg.py` filtergraph per preset: `gaming`, `split_two`, `center_crop`, `custom` (statis) → kanvas 1080×1920 tanpa bar hitam. _(FR-007)_
   - Selesai jika: TC-018 lulus; snapshot frame untuk tiap preset statis sesuai.
-- [ ] **T-033** Jalur crop dinamis `irl` (ikuti wajah, maks. pan 5%/detik) dan `podcast` (pembicara aktif dari diarization + wajah, tahan ≥ 1,5 detik) dengan sampling 5 fps di rentang Klip. _(FR-007, ADR-004)_
+- [x] **T-033** Jalur crop dinamis `irl` (ikuti wajah, maks. pan 5%/detik) dan `podcast` (pembicara aktif dari diarization + wajah, tahan ≥ 1,5 detik) dengan sampling 5 fps di rentang Klip. _(FR-007, ADR-004)_
   - Selesai jika: TC-019 lulus; IRL tidak bergoyang (simpangan antar-detik ≤ 5% lebar).
 - [ ] **T-034** Endpoint `GET /streams/{id}/regions`, `PUT /clips/{id}/regions` (override, simpan default Kanal, terapkan ke klip lain), `GET /channels`, `POST /channels`, `PATCH /streams/{id}/channel`, `GET /layout-presets`, `GET /media/streams/{id}/frame`. _(FR-006, FR-008)_
   - Selesai jika: TC-017 lulus lewat API; stream tanpa Kanal → 409 "Pilih Kanal dulu".
