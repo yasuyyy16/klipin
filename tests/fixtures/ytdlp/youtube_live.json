@@ -1,0 +1,20 @@
+{
+  "_type": "video",
+  "id": "liveNOW1234",
+  "title": "LIVE main bareng penonton",
+  "channel": "NamaStreamer",
+  "channel_id": "UCabcdefghijklmnopqrstuv",
+  "uploader": "NamaStreamer",
+  "duration": null,
+  "is_live": true,
+  "live_status": "is_live",
+  "extractor": "youtube",
+  "extractor_key": "Youtube",
+  "webpage_url": "https://www.youtube.com/watch?v=liveNOW1234",
+  "subtitles": {},
+  "format_id": "301",
+  "ext": "mp4",
+  "protocol": "m3u8_native",
+  "height": 1080,
+  "tbr": 6000
+}

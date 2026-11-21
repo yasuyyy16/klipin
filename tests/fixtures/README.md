@@ -26,6 +26,21 @@ Catatan: lantai "audio tenang" berupa hening digital, bukan nada pelan, karena n
 membuat FLAC lebih dari 6 MB. Bagi Sinyal Audio (loudness per detik lalu z-score) bentuknya
 setara: rendah dan rata, lalu satu lonjakan.
 
+## Respons yt-dlp tersimpan (`ytdlp/`)
+
+Info dict `YoutubeDL.extract_info(..., download=False)` yang dipangkas ke field yang dibaca
+`media/ytdlp.py`, ditulis tangan mengikuti bentuk keluaran yt-dlp 2026.10.26 (nama field dan
+`extractor_key` dicek di kode extractor). ID, judul, dan nama kanal fiktif. Dipakai di T-021.
+
+| File | Kasus |
+|---|---|
+| `youtube_vod_chat.json` | VOD YouTube bekas live, subtitle `live_chat` ada, format 1080p + audio dengan `filesize`/`filesize_approx` |
+| `youtube_live.json` | YouTube sedang live (`live_status = is_live`), durasi belum ada |
+| `kick_vod.json` | VOD Kick (`KickVOD`), satu format HLS tanpa ukuran (perkiraan dari `tbr` × durasi) |
+
+Uji unduh memakai yt-dlp sungguhan terhadap server HTTP lokal yang menyajikan
+`no_audio_10s.mp4` (dengan dukungan `Range` untuk uji lanjutan).
+
 ## Fixture berwajah
 
 Semua 30 dtk, 960×540, 30 fps, H.264 + AAC. Hanya potongan wawancara menghadap kamera yang

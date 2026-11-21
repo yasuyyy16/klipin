@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-20, setelah Checkpoint 1.
+Terakhir diperbarui: 2026-11-21, setelah T-021.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Task berikutnya: **T-021** (Fase 2). Mulai Fase 2 hanya setelah pemilik proyek konfirmasi.
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021 selesai; task berikutnya: **T-022**.
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (170 tes per Checkpoint 1); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (193 tes setelah T-021); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -30,6 +30,8 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 8 | `update-ytdlp` = `uv lock --upgrade-package yt-dlp` lalu `uv sync --no-install-project --inexact`; mengubah `uv.lock`. Di mode `fake` hanya simulasi | `backend/klipin/system.py` | Menunggu |
 | 9 | Validasi PATCH /settings untuk kunci yang tidak punya aturan di 02-requirements.md §3: `score_min_threshold` 0–100, `live_last_n_default_s` 15–90, enum penyedia, `default_subtitle_style` harus ada di DB, kunci asing ditolak | `api/schemas/settings.py` | Menunggu |
 | 10 | Fixture audio "tenang" = hening digital (nada pelan membuat FLAC > 6 MB); fixture wajah dari 2 video domain publik Wikimedia Commons | `tests/fixtures/README.md` | Disetujui (sumber CC0/PD dipilih pemilik) |
+| 11 | `media/ytdlp.py`: URL disaring dulu per host (youtube.com, www/m/music.youtube.com, youtu.be, kick.com, www.kick.com) sebelum yt-dlp dipanggil, lalu hasilnya wajib `extractor_key` `Youtube`/`Kick`/`KickVOD` dan bukan playlist; selain itu `URL_NOT_SUPPORTED`. Hasil unduhan selalu di-remux ke MP4 (`FFmpegVideoRemuxer`) bila format tunggal bukan MP4 | `backend/klipin/media/ytdlp.py` | Menunggu |
+| 12 | `estimated_size_bytes` = jumlah `filesize`/`filesize_approx` format terpilih (fallback `tbr` × durasi); `null` bila ada yang tak diketahui (mis. live). T-022 perlu memutuskan cek disk saat ukuran `null` | `media/ytdlp.py` (`_estimate_size`) | Menunggu, putuskan di T-022 |
 
 ## Sengaja ditunda ke task tertentu
 
@@ -67,6 +69,9 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 - `astral-sh/setup-uv` tidak menerbitkan tag mayor; pin versi lengkap (`v10.3.3`).
 - Ruff di proyek ini mengaktifkan aturan tambahan (FURB, BLE, SIM, ISC); Python minimal 3.11
   (jangan pakai sintaks generik 3.12).
+- Di perangkat dengan repo di `D:\Projects\klipin`, awalnya tidak ada `uv`/`pnpm` di PATH: `uv` dipasang lewat
+  `python -m pip install --user uv` (biner di `%APPDATA%\Python\Python312\Scripts`). FFmpeg ada di
+  `D:\App klip\ffmpeg-8.1.1-essentials_build\bin`.
 - `netstat` tidak menampilkan socket proses dari sandbox agent; verifikasi bind lewat akses IP LAN.
 
 ## Pertanyaan terbuka untuk pemilik proyek

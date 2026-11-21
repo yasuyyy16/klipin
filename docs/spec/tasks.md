@@ -54,7 +54,7 @@
 ## Fase 2: MVP-1 — klip dari VOD sampai Paket Unggah manual
 
 ### US-001 Impor VOD dari URL
-- [ ] **T-021** Modul `media/ytdlp.py`: `inspect(url)` (metadata, live status, chat replay, perkiraan ukuran) dan unduh VOD ≤ 1080p ke MP4 dengan progres & lanjutan. _(FR-001, INT-01)_
+- [x] **T-021** Modul `media/ytdlp.py`: `inspect(url)` (metadata, live status, chat replay, perkiraan ukuran) dan unduh VOD ≤ 1080p ke MP4 dengan progres & lanjutan. _(FR-001, INT-01)_
   - Selesai jika: unit test dengan respons yt-dlp tersimpan; unduhan fixture lokal berhasil dan bisa dilanjutkan.
 - [ ] **T-022** Endpoint `POST /streams/inspect`, `POST /streams` (mode `vod`), `GET /streams`, `GET /streams/{id}`; cek disk; deteksi duplikat; buat/temukan Kanal. _(FR-001)_
   - Selesai jika: TC-001–TC-004 lulus.

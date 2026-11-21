@@ -1,0 +1,26 @@
+{
+  "_type": "video",
+  "id": "abc123XYZ00",
+  "title": "Main horor sampai pagi",
+  "channel": "NamaStreamer",
+  "channel_id": "UCabcdefghijklmnopqrstuv",
+  "uploader": "NamaStreamer",
+  "uploader_id": "@namastreamer",
+  "duration": 10845,
+  "is_live": false,
+  "was_live": true,
+  "live_status": "was_live",
+  "extractor": "youtube",
+  "extractor_key": "Youtube",
+  "webpage_url": "https://www.youtube.com/watch?v=abc123XYZ00",
+  "subtitles": {
+    "live_chat": [
+      {"url": "https://www.youtube.com/watch?v=abc123XYZ00", "ext": "json", "video_id": "abc123XYZ00", "protocol": "youtube_live_chat_replay"}
+    ]
+  },
+  "format_id": "137+140",
+  "requested_formats": [
+    {"format_id": "137", "ext": "mp4", "width": 1920, "height": 1080, "fps": 30, "vcodec": "avc1.640028", "acodec": "none", "tbr": 4398.2, "filesize": 5962502134},
+    {"format_id": "140", "ext": "m4a", "vcodec": "none", "acodec": "mp4a.40.2", "abr": 129.5, "tbr": 129.5, "filesize_approx": 175560000}
+  ]
+}

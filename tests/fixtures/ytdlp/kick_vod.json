@@ -1,0 +1,21 @@
+{
+  "_type": "video",
+  "id": "01a0251f-ef48-702d-9289-d66922da0e84",
+  "title": "Malam santai di Kick",
+  "channel": "namastreamer",
+  "channel_id": "668",
+  "uploader": "namastreamer",
+  "uploader_id": "namastreamer",
+  "duration": 42250,
+  "is_live": false,
+  "live_status": "was_live",
+  "extractor": "kick:vod",
+  "extractor_key": "KickVOD",
+  "webpage_url": "https://kick.com/namastreamer/videos/01a0251f-ef48-702d-9289-d66922da0e84",
+  "format_id": "hls-1080p60",
+  "ext": "mp4",
+  "protocol": "m3u8_native",
+  "height": 1080,
+  "fps": 60,
+  "tbr": 8000
+}
