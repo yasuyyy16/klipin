@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-030.
+Terakhir diperbarui: 2026-11-21, setelah T-031.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-030 selesai (US-005 transkripsi lengkap); task berikutnya: **T-031** (`detect_layout`, butuh model MediaPipe — minta izin unduh).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-031 selesai; task berikutnya: **T-032** (`media/ffmpeg.py` filtergraph per preset).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (301 tes setelah T-030); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (312 tes setelah T-031); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -45,13 +45,13 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 23 | Adapter Deepgram: `Content-Type: audio/flac` (contoh di dokumentasi hanya wav/mp3; FLAC tercantum sebagai `encoding` yang didukung, belum diuji ke API sungguhan); bahasa terdeteksi `en-US` dinormalkan ke `en`; tanpa `results.utterances` kata dikelompokkan per pembicara berurutan; 408/422 dianggap sementara; 402 → pesan "Kredit Deepgram habis…". Dependensi baru: `httpx` (runtime), `respx` (dev) | `providers/transcriber/deepgram.py` | Menunggu; uji ke API asli saat A/B T-061 (butuh izin biaya) |
 | 24 | `Transcriber.transcribe(chunk, *, should_cancel=None)`: penyedia asinkron mengecek batal tiap ≤ 0,5 dtk (FR-023). AssemblyAI: `speech_models=["universal-2"]` eksplisit (dukungan `id` hanya terkonfirmasi di sana); transkrip + unggahan dihapus dari AssemblyAI setelah selesai/gagal/batal; status `error` → potongan `failed` (bukan retry); 403 diperlakukan seperti 401 sesuai INT-04 walau AssemblyAI juga memakai 403 untuk batas 20.000 request/5 menit; polling maks. 30 menit lalu dianggap sementara; wilayah US saja | `providers/transcriber/assemblyai.py` | Menunggu; uji ke API asli saat A/B T-061 |
 | 25 | FR-022: `transcribe` ditahan bila durasi > ambang konfirmasi **atau** > `max_audio_minutes_per_job` (batas berlaku walau konfirmasi mati); durasi tak diketahui → tidak ditahan. Perkiraan jendela LLM = round(jam × 120) (batas BR-003; cocok dengan contoh 06-api 2 j 10 m → 260), minimal 1. `usage_estimate` menambah `duration_ms`, `max_audio_ms`, `over_limit` (usul tambah ke 06-api.md). Rentang konfirmasi disimpan di `checkpoint.range` (bukan `scope_*`) agar Job tetap dianggap seluruh stream dan lanjut ke `score_highlights`; validasi: di dalam durasi, selesai > mulai, panjang ≤ batas. Konfirmasi tanpa rentang saat melebihi batas → 409. Setelah unduh, `duration_ms` diperbarui dari FFprobe file asli. GET /settings memuat `pricing_links`. P-04 menampilkan banner + dialog konfirmasi yang sama dengan P-06 | `usage.py`, `jobs.confirm_job`, `pipeline.on_success`, `handlers/download.py`, `components/UsageConfirmDialog.tsx` | Menunggu |
+| 26 | `detect_layout`: model BlazeFace + YuNet dibundel di `backend/klipin/layout/models/` (izin pemilik 2026-11-21; sumber, lisensi, SHA256 di README folder itu); per frame MediaPipe dulu, YuNet bila MediaPipe tidak menemukan wajah/gagal dimuat (tafsiran "fallback OpenCV DNN"). Sampel merata (lebar 960 px), minimal 10 untuk video pendek; frame dibaca dengan seek OpenCV, tanpa folder `frames/`. Ambang: tanpa wajah di ≥ 90% sampel → `center_crop`; ≥ 2 wajah di ≥ 50% sampel berwajah → `podcast` (bukan `split_two`) dengan `face_a`/`face_b` = wajah + 30%; satu wajah dengan sebaran pusat ≤ 8% dan luas < 25% → `gaming`; selain itu `irl` (tanpa region). Kotak `cam` = persegi panjang tepi panel yang **sisi terlemahnya** terkuat di peta gradien rata-rata antar-frame (cadangan: wajah + 40%); `content` = sisi frame di luar kolom cam bila lebarnya ≥ 50%, selain itu seluruh frame. Kanal dengan preset default: preset Kanal dipakai, region deteksi tetap disimpan untuk stream, kecocokan (IoU) dicatat di log Job. Pesan "Wajah tidak terdeteksi…" baru di log Job; tampil di UI pada T-041. Dependensi baru: `mediapipe` (membawa `opencv-contrib-python`), `numpy` | `layout/`, `worker/handlers/detect_layout.py` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
 | Hal | Ke task |
 |---|---|
 | `providers/*.json` (respons rekaman per penyedia) dibuat dari dokumentasi resmi bersama adapternya (Deepgram T-028 & AssemblyAI T-029 sudah) | T-038 |
-| Model MediaPipe: versi 1.2.3 tidak menyertakan `solutions` maupun model wajah; perlu unduh `.tflite` (minta izin). Uji deteksi fixture wajah + IoU TC-015 terjadi di sini | T-031 |
 | Status Klip saat Job `render` sukses/gagal (pipeline baru menangani stream) | T-046 |
 | `cancel` pada `record_live` = `stop` (gabung segmen) ; event `live.position` | T-051 |
 | Tab P-07 Akun Unggah, Caption, Gaya Subtitle (sengaja belum ditampilkan) | v1.1, T-050, T-045 |

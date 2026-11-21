@@ -65,8 +65,9 @@ Video ini menampilkan orang sungguhan. Pakai hanya sebagai data uji Klipin, jang
 diunggah ulang sebagai konten.
 
 Pemeriksaan: lembar kontak satu frame per detik menunjukkan wajah ada di setiap detik
-ketiga video. Deteksi dengan MediaPipe dilakukan di T-031 (TC-015), karena MediaPipe 1.2.3
-butuh file model terpisah yang dipilih di task itu.
+ketiga video. Deteksi wajah (MediaPipe BlazeFace + YuNet, model di `backend/klipin/layout/models/`)
+menemukan wajah di semua fixture berwajah dan tidak menemukan apa pun di `no_face_30s.mp4`;
+Region Cam `gaming` hasil deteksi ber-IoU ±0,99 terhadap ground truth (T-031, TC-015).
 
 ## Belum ada
 

@@ -78,7 +78,7 @@
   - Selesai jika: TC-043, TC-044 lulus; banner di P-04 & dialog di P-06 berfungsi.
 
 ### US-006 / US-007 Deteksi cam & Preset Layout
-- [ ] **T-031** Handler `detect_layout`: sampling 1 frame/10 detik (maks. 600), MediaPipe (fallback OpenCV DNN), pengelompokan posisi wajah, aturan saran preset FR-006, simpan Region Cam (`source_stream_id`) & `suggested_layout_preset_id`, verifikasi default Kanal. _(FR-006)_
+- [x] **T-031** Handler `detect_layout`: sampling 1 frame/10 detik (maks. 600), MediaPipe (fallback OpenCV DNN), pengelompokan posisi wajah, aturan saran preset FR-006, simpan Region Cam (`source_stream_id`) & `suggested_layout_preset_id`, verifikasi default Kanal. _(FR-006)_
   - Selesai jika: TC-015, TC-016, TC-017 lulus.
 - [ ] **T-032** Modul `media/ffmpeg.py` filtergraph per preset: `gaming`, `split_two`, `center_crop`, `custom` (statis) → kanvas 1080×1920 tanpa bar hitam. _(FR-007)_
   - Selesai jika: TC-018 lulus; snapshot frame untuk tiap preset statis sesuai.

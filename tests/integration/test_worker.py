@@ -17,10 +17,19 @@ from klipin.worker.context import LOG_TAIL_MAX, JobContext
 from klipin.worker.handlers import HANDLERS, fake
 from klipin.worker.loop import INTERRUPTED, NO_HANDLER, Worker, claim, mark_interrupted
 
+# Job dummy = detect_layout tanpa handler asli (dipulihkan otomatis oleh monkeypatch): di mode
+# fake memakai handler palsu bertahap, di mode real gagal "tidak ada handler".
+DUMMY = "detect_layout"
+# Proses Worker terpisah untuk TC-046 dengan perlakuan yang sama.
+WORKER_WITH_DUMMY = ("import sys; from klipin.worker.handlers import HANDLERS; "
+                     f"HANDLERS.pop({DUMMY!r}); from klipin.__main__ import main; "
+                     "sys.argv = ['klipin', 'worker']; main()")
+
 
 @pytest.fixture
 def db(engine, home, monkeypatch):
     monkeypatch.setattr(fake, "STEP_S", 0.02)
+    monkeypatch.delitem(HANDLERS, DUMMY)
     with engine.begin() as conn:
         conn.exec_driver_sql(
             "INSERT INTO source_streams (id, source_type, platform, source_url, title) "
@@ -28,8 +37,7 @@ def db(engine, home, monkeypatch):
     return engine
 
 
-def add_job(engine, job_type="detect_layout", **cols):
-    # Jenis Job tanpa handler asli -> handler palsu (download sudah punya handler asli, T-023).
+def add_job(engine, job_type=DUMMY, **cols):
     cols = {"job_type": job_type, "source_stream_id": 1, **cols}
     names = ", ".join(cols)
     marks = ", ".join(f":{k}" for k in cols)
@@ -96,30 +104,27 @@ def test_cancel_running_job(db, monkeypatch):
     assert json.loads(row["checkpoint"])["steps_done"] < fake.STEPS
 
 
-def test_cancel_kills_subprocess_within_10s(db):
+def test_cancel_kills_subprocess_within_10s(db, monkeypatch):
     def sleeper(ctx: JobContext) -> None:
         ctx.run([sys.executable, "-c", "import time; time.sleep(60)"])
 
-    HANDLERS["render"] = sleeper
-    try:
-        with db.begin() as conn:
-            conn.exec_driver_sql(
-                "INSERT INTO clips (id, source_stream_id, origin, status, start_ms, end_ms, "
-                "layout_preset_id, subtitle_style_id) VALUES (1, 1, 'auto', 'approved', 0, "
-                "30000, 1, 1)")
-        job_id = add_job(db, "render", clip_id=1)
-        worker = Worker(db)
-        drive(worker, lambda: job(db, job_id)["status"] == "running")
-        time.sleep(0.5)
-        with db.begin() as conn:
-            conn.execute(text("UPDATE jobs SET status = 'cancelled' WHERE id = :id"),
-                         {"id": job_id})
-        start = time.monotonic()
-        drive(worker, lambda: not worker.active, timeout=12)
-        assert time.monotonic() - start <= 10
-        assert job(db, job_id)["status"] == "cancelled"
-    finally:
-        del HANDLERS["render"]
+    monkeypatch.setitem(HANDLERS, "render", sleeper)
+    with db.begin() as conn:
+        conn.exec_driver_sql(
+            "INSERT INTO clips (id, source_stream_id, origin, status, start_ms, end_ms, "
+            "layout_preset_id, subtitle_style_id) VALUES (1, 1, 'auto', 'approved', 0, "
+            "30000, 1, 1)")
+    job_id = add_job(db, "render", clip_id=1)
+    worker = Worker(db)
+    drive(worker, lambda: job(db, job_id)["status"] == "running")
+    time.sleep(0.5)
+    with db.begin() as conn:
+        conn.execute(text("UPDATE jobs SET status = 'cancelled' WHERE id = :id"),
+                     {"id": job_id})
+    start = time.monotonic()
+    drive(worker, lambda: not worker.active, timeout=12)
+    assert time.monotonic() - start <= 10
+    assert job(db, job_id)["status"] == "cancelled"
 
 
 def test_heavy_slots_and_light_slot(db, monkeypatch):
@@ -155,25 +160,22 @@ def test_mark_interrupted_only_stale_jobs(db):
 def test_unknown_job_type_fails_without_fake(db, monkeypatch):
     monkeypatch.setenv("KLIPIN_PROVIDERS", "real")
     get_config.cache_clear()
-    job_id = add_job(db, "detect_layout")
+    job_id = add_job(db, DUMMY)
     drive(Worker(db), lambda: job(db, job_id)["status"] == "failed")
     assert job(db, job_id)["error_message"] == NO_HANDLER
 
 
-def test_handler_exception_marks_failed_with_log(db):
+def test_handler_exception_marks_failed_with_log(db, monkeypatch):
     def broken(ctx: JobContext) -> None:
         ctx.log("mulai")
         raise ValueError("format audio tidak dikenali")
 
-    HANDLERS["transcribe"] = broken
-    try:
-        job_id = add_job(db, "transcribe")
-        drive(Worker(db), lambda: job(db, job_id)["status"] == "failed")
-        row = job(db, job_id)
-        assert row["error_message"] == "format audio tidak dikenali"
-        assert row["log_tail"] == "mulai\nGAGAL: format audio tidak dikenali\n"
-    finally:
-        del HANDLERS["transcribe"]
+    monkeypatch.setitem(HANDLERS, "transcribe", broken)
+    job_id = add_job(db, "transcribe")
+    drive(Worker(db), lambda: job(db, job_id)["status"] == "failed")
+    row = job(db, job_id)
+    assert row["error_message"] == "format audio tidak dikenali"
+    assert row["log_tail"] == "mulai\nGAGAL: format audio tidak dikenali\n"
 
 
 def test_log_tail_is_capped(db):
@@ -192,7 +194,7 @@ def test_tc046_kill_worker_then_restart(db, home):
     """Kill proses Worker saat Job dummy jalan; start ulang → failed + DB utuh + lanjut."""
     job_id = add_job(db)
     env = {**os.environ, "KLIPIN_HOME": str(home), "KLIPIN_PROVIDERS": "fake"}
-    proc = subprocess.Popen([sys.executable, "-m", "klipin", "worker"], env=env,
+    proc = subprocess.Popen([sys.executable, "-c", WORKER_WITH_DUMMY], env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         end = time.monotonic() + 30
