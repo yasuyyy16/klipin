@@ -1,5 +1,5 @@
 # Arsitektur Sistem: Klipin
-> Versi 1.2 · 2026-11-20 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 07-integrasi.md
+> Versi 1.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 07-integrasi.md
 
 ## 1. Gambaran Umum
 Klipin adalah **monolith lokal** dengan dua proses Python yang berbagi satu database SQLite dan satu folder kerja:
@@ -286,8 +286,8 @@ Paket ini tidak punya dokumen Deployment terpisah karena aplikasi hanya berjalan
 | `KLIPIN_HOST` | `127.0.0.1,::1` | Tidak | API | Daftar alamat loopback yang di-bind. Jangan diubah ke `0.0.0.0` (BR-012) |
 | `KLIPIN_FFMPEG_PATH` | `C:\ffmpeg\bin\ffmpeg.exe` | Tidak | Worker | Jika FFmpeg tidak ada di PATH |
 | `KLIPIN_MAX_HEAVY_JOBS` | `1` | Tidak | Worker | Bisa juga diatur di Pengaturan |
-| `KLIPIN_TRANSCRIBER` | `deepgram` | Tidak | Worker | Penyedia default; bisa dipilih di Pengaturan |
-| `KLIPIN_LLM_PROVIDER` | `anthropic` | Tidak | Worker | Penyedia default |
+| `KLIPIN_TRANSCRIBER` | `deepgram` | Tidak | Worker | Cadangan saja: dipakai hanya bila Pengaturan `transcriber_provider` kosong. Pengaturan (P-07) selalu menang (ADR-003) |
+| `KLIPIN_LLM_PROVIDER` | `anthropic` | Tidak | Worker | Cadangan saja: dipakai hanya bila Pengaturan `llm_provider` kosong. Pengaturan selalu menang |
 | `TRANSCRIBER_API_KEY` | `xxxx` | Ya* | Worker | *Hanya jika keyring tidak tersedia; normalnya diisi lewat Pengaturan |
 | `LLM_API_KEY` | `xxxx` | Ya* | Worker | *Sama seperti di atas |
 | `GOOGLE_OAUTH_CLIENT_ID` | `1234-abc.apps.googleusercontent.com` | Untuk YouTube `auto` (F-11) | API, Worker | OAuth client tipe Desktop dari Google Cloud Console |
@@ -298,7 +298,7 @@ Paket ini tidak punya dokumen Deployment terpisah karena aplikasi hanya berjalan
 | `META_APP_SECRET` | `xxxx` | Untuk Instagram/Facebook `auto` | API, Worker | Rahasia; simpan di keyring bila memungkinkan |
 | `KLIPIN_OAUTH_REDIRECT_BASE` | `http://localhost:8765` | Tidak | API | Basis redirect URI yang didaftarkan di tiap platform: `{base}/oauth/callback/{platform}` |
 | `KLIPIN_LOG_LEVEL` | `INFO` | Tidak | API, Worker | `DEBUG` saat investigasi |
-| `KLIPIN_PROVIDERS` | `real` | Tidak | Worker, API | `fake` memakai penyedia palsu (transkripsi, LLM, publisher) untuk tes & pengembangan tanpa biaya (09-testing.md) |
+| `KLIPIN_PROVIDERS` | `real` | Tidak | Worker, API | `fake` memakai penyedia palsu (transkripsi, LLM, publisher) untuk tes & pengembangan tanpa biaya (09-testing.md). Pengambil media juga palsu, tanpa jaringan: inspect dijawab dari `tests/fixtures/ytdlp/*.json` dan `download` menyalin video + chat fixture. API key tetap wajib diisi (boleh nilai sembarang) agar TC-014 berlaku |
 
 `.env` masuk `.gitignore`; repo hanya berisi `.env.example`.
 
@@ -344,5 +344,6 @@ Mode pengembangan: `uv run klipin api --reload`, `uv run klipin worker`, dan `pn
 | Versi | Tanggal | Perubahan |
 |---|---|---|
 | 1.0 | 2026-11-20 | Draf awal |
+| 1.3 | 2026-11-21 | Keputusan pemilik saat T-024/T-026: Pengaturan menang atas env `KLIPIN_TRANSCRIBER`/`KLIPIN_LLM_PROVIDER` (env hanya cadangan); mode `fake` mencakup pengambil media berbasis fixture |
 | 1.2 | 2026-11-20 | Hasil CEK #1, #3, #8, #11: render pratinjau dibedakan lewat `jobs.purpose`; bind loopback IPv4 + IPv6; env `KLIPIN_PROVIDERS`; pertanyaan penyedia ditandai terjawab |
 | 1.1 | 2026-11-20 | Menyesuaikan unggah multi-platform & Mode Unggah (01-prd.md v1.1): komponen Pengunggah jadi adapter `Publisher` per platform + Paket Unggah + Penulis Caption, diagram, tech stack, ADR-008, struktur folder `publishing/`, env TikTok/Meta, langkah instalasi & runbook. Tambah ADR-009 token sesi API lokal (menyelaraskan 06-api.md) |

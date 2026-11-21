@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-025.
+Terakhir diperbarui: 2026-11-21, setelah T-026.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-025 selesai (US-001 lengkap); task berikutnya: **T-026**.
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-026 selesai; task berikutnya: **T-027** (handler `transcribe`).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (243 tes setelah T-024); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (251 tes setelah T-026); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -24,7 +24,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 2 | Membatalkan Job pipeline (download/transcribe/detect_layout/score_highlights seluruh stream) membuat Stream Sumber `failed` dengan pesan "Job dibatalkan." State machine §4.1 tidak mengatur ini; tanpanya stream tertahan di `downloading`/`processing` | `backend/klipin/jobs.py` (`cancel_job`) | Menunggu |
 | 3 | Koneksi SSE ke-6 ditolak `429` dengan kode baru `TOO_MANY_CONNECTIONS` (belum ada di tabel error 06-api.md §1) | `api/routes/events.py` | Menunggu, usul tambah ke 06-api.md |
 | 4 | Env yang diisi eksplisit menang atas Pengaturan: `KLIPIN_MAX_HEAVY_JOBS` vs `settings.max_heavy_jobs` | `worker/loop.py` (`max_heavy_jobs`) | Menunggu |
-| 5 | Pertanyaan yang sama untuk `KLIPIN_TRANSCRIBER`/`KLIPIN_LLM_PROVIDER` vs `transcriber_provider`/`llm_provider`; belum dipakai di kode | Putuskan sebelum T-026/T-028 | Belum diputuskan |
+| 5 | Pengaturan `transcriber_provider`/`llm_provider` menang atas env `KLIPIN_TRANSCRIBER`/`KLIPIN_LLM_PROVIDER`; env hanya cadangan bila Pengaturan kosong. Dipindah ke 04-arsitektur.md v1.3 §8.2 | `providers/transcriber/__init__.py` (`provider_name`) | Disetujui pemilik (2026-11-21) |
 | 6 | Respons Job memuat `stream_title` (untuk kolom "Objek" P-06); event SSE `job.updated` memuat `started_at`/`finished_at` | `api/routes/jobs.py`, `api/routes/events.py` | Menunggu, usul tambah ke 06-api.md |
 | 7 | `GET /system/health` = cek `klipin doctor` tanpa cek port (port dipakai server itu sendiri); respons `{ok, checks[], home, backup_dir}` | `api/routes/system.py` | Menunggu (skema tidak dirinci di spesifikasi) |
 | 8 | `update-ytdlp` = `uv lock --upgrade-package yt-dlp` lalu `uv sync --no-install-project --inexact`; mengubah `uv.lock`. Di mode `fake` hanya simulasi | `backend/klipin/system.py` | Menunggu |
@@ -37,9 +37,10 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 15 | Kata reaksi (FR-010): kata alfanumerik cocok sebagai kata utuh tanpa beda huruf besar/kecil (`lol` cocok di "lol bang", tidak di "lolos"; `wkwk` tidak cocok "wkwkwkwk"); emoji/simbol cocok sebagai potongan teks. Dihitung saat impor | `media/chat_replay.py` (`reaction_matcher`) | Menunggu |
 | 16 | Jenis Pesan Chat: `liveChatTextMessageRenderer` → `text`; Paid Message/Sticker → `donation`; Membership + hadiah membership → `membership`; pesan sistem YouTube & ticker diabaikan (tidak disimpan). Chat tidak ada / gagal / VOD Kick → Pesan Chat lama dihapus dan `has_chat = 0` | `media/chat_replay.py`, `worker/handlers/download.py` | Menunggu |
 | 17 | Job `download`: video 0–90%, chat 90–99%; checkpoint `video_done` + `video_path` (coba ulang tidak mengunduh ulang video utuh); chat replay diunduh terpisah setelah video agar kegagalannya tidak menggagalkan video; `video_width/height/fps` dari metadata yt-dlp (bisa kosong). Disk penuh → "Ruang disk habis. Kosongkan ruang lalu coba lagi." | `worker/handlers/download.py` | Menunggu |
-| 18 | Mode `fake` memakai media fixture (`media/fake.py`), tanpa jaringan: semua URL YouTube/Kick sah dijawab dari `tests/fixtures/ytdlp/*.json` (ID dari URL, URL berisi "live" = live, durasi 30 dtk); Job `download` menyalin `gaming_facecam_30s.mp4` + `live_chat_spike.jsonl` ke `streams/{id}/` (±2 dtk progres simulasi) | `media/fake.py`, `streams.inspector`, `handlers/download.py` | Disetujui pemilik (2026-11-21) |
+| 18 | Mode `fake` memakai media fixture (`media/fake.py`), tanpa jaringan: semua URL YouTube/Kick sah dijawab dari `tests/fixtures/ytdlp/*.json` (ID dari URL, URL berisi "live" = live, durasi 30 dtk); Job `download` menyalin `gaming_facecam_30s.mp4` + `live_chat_spike.jsonl` ke `streams/{id}/` (±2 dtk progres simulasi) | `media/fake.py`, `streams.inspector`, `handlers/download.py` | Disetujui pemilik (2026-11-21), dipindah ke 04-arsitektur.md v1.3 §8.2 |
 | 19 | P-01: tanpa thumbnail (inspect tidak mengembalikan frame); badge hanya "Kanal dikenal" (nama preset default menunggu `GET /channels`, T-034); tombol "Mulai Rekam Live" & "Pilih file dari komputer" belum ditampilkan (tanpa kontrol palsu) — URL live memberi teks penjelasan; banner izin yang ditutup diingat di `localStorage`. P-04 sementara berisi header stream + progres pipeline (`components/PipelineProgress.tsx`) sampai T-041 | `frontend/src/pages/P01Beranda.tsx`, `P04ReviewKlip.tsx` | Menunggu |
 | 20 | P-02: filter status dikelompokkan Semua / Diproses (`queued,downloading,recording,processing`) / Siap direview / Gagal; 50 per halaman; kolom ukuran = total + rincian "Sumber · Render" (ukuran segmen live menyusul T-051); jumlah Klip hanya status yang > 0 | `frontend/src/pages/P02DaftarStream.tsx` | Menunggu |
+| 21 | `Transcriber.transcribe(AudioChunk) → TranscriptionResult` (utterance + kata, waktu **relatif potongan**, label pembicara lokal); retry & penjahitan di handler (T-027). Error: `TranscriberAuthError` (pesan FR-005), `TranscriberTransientError` (429/5xx/timeout), `TranscriberBadAudioError` (400). API key dicek di factory **juga di mode fake** (TC-014): dev/E2E mode fake perlu isi API key sembarang. `FakeTranscriber`: naskah Indonesia tetap di kode (kalimat tiap 6 dtk absolut, kata tiap 1 dtk, pembicara "0"/"1", tiap kata ke-7 confidence 0,55), `silent_ranges`, kegagalan per indeks potongan | `providers/transcriber/` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
