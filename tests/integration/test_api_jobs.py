@@ -82,29 +82,26 @@ def test_cancel_pipeline_job_fails_stream(api, db):
         "failed", "Job dibatalkan.")
 
 
-def test_tc045_cancel_running_render(api, db):
+def test_tc045_cancel_running_render(api, db, monkeypatch):
     def slow_render(ctx: JobContext) -> None:
         ctx.run([sys.executable, "-c", "import time; time.sleep(60)"])
 
-    HANDLERS["render"] = slow_render
-    try:
-        with db.begin() as conn:
-            conn.exec_driver_sql("UPDATE clips SET status = 'rendering' WHERE id = 1")
-        job_id = add_job(db, "render", clip_id=1)
-        worker = Worker(db)
+    monkeypatch.setitem(HANDLERS, "render", slow_render)
+    with db.begin() as conn:
+        conn.exec_driver_sql("UPDATE clips SET status = 'rendering' WHERE id = 1")
+    job_id = add_job(db, "render", clip_id=1)
+    worker = Worker(db)
+    worker.tick()
+    time.sleep(0.5)  # subprocess sudah berjalan
+    assert api.post(f"/api/v1/jobs/{job_id}/cancel").json()["status"] == "cancelled"
+    start = time.monotonic()
+    while worker.active and time.monotonic() - start < 12:
         worker.tick()
-        time.sleep(0.5)  # subprocess sudah berjalan
-        assert api.post(f"/api/v1/jobs/{job_id}/cancel").json()["status"] == "cancelled"
-        start = time.monotonic()
-        while worker.active and time.monotonic() - start < 12:
-            worker.tick()
-            time.sleep(0.05)
-        assert not worker.active
-        assert time.monotonic() - start <= 10
-        assert one(db, "SELECT status FROM jobs WHERE id = :id", id=job_id) == ("cancelled",)
-        assert one(db, "SELECT status FROM clips WHERE id = 1") == ("approved",)
-    finally:
-        del HANDLERS["render"]
+        time.sleep(0.05)
+    assert not worker.active
+    assert time.monotonic() - start <= 10
+    assert one(db, "SELECT status FROM jobs WHERE id = :id", id=job_id) == ("cancelled",)
+    assert one(db, "SELECT status FROM clips WHERE id = 1") == ("approved",)
 
 
 def test_retry_copies_checkpoint(api, db):

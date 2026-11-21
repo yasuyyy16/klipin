@@ -5,6 +5,7 @@ import time
 import pytest
 from sqlalchemy import text
 
+from klipin import secrets
 from klipin.worker import pipeline
 from klipin.worker.context import JobContext
 from klipin.worker.handlers import HANDLERS, fake
@@ -12,8 +13,9 @@ from klipin.worker.loop import Worker, claim, mark_interrupted
 
 
 @pytest.fixture
-def db(engine, home, monkeypatch):
+def db(engine, home, memory_keyring, monkeypatch):
     monkeypatch.setattr(fake, "STEP_S", 0.0)
+    secrets.set_secret("transcriber_api_key", "kunci-uji")  # transcribe asli + FakeTranscriber
     with engine.begin() as conn:
         conn.exec_driver_sql(
             "INSERT INTO source_streams (id, source_type, platform, source_url, title) "
@@ -63,34 +65,30 @@ def test_vod_chain_to_ready(db):
     assert stream_status(db) == ("ready", None)
 
 
-def test_transcribe_failure_fails_stream(db):
+def test_transcribe_failure_fails_stream(db, monkeypatch):
     def broken(ctx: JobContext) -> None:
         raise RuntimeError("API transkripsi menolak audio")
 
-    HANDLERS["transcribe"] = broken
-    try:
-        run_until_idle(db)
-    finally:
-        del HANDLERS["transcribe"]
+    monkeypatch.setitem(HANDLERS, "transcribe", broken)  # pulih otomatis; jangan hapus handler asli
+    run_until_idle(db)
     assert ("score_highlights", "succeeded") not in jobs(db)
     assert ("transcribe", "failed") in jobs(db)
     assert stream_status(db) == ("failed", "API transkripsi menolak audio")
 
 
-def test_ready_needs_both_layout_and_scores(db):
+def test_ready_needs_both_layout_and_scores(db, monkeypatch):
     def broken(ctx: JobContext) -> None:
         raise RuntimeError("deteksi gagal")
 
-    HANDLERS["detect_layout"] = broken
-    try:
-        run_until_idle(db)
-    finally:
-        del HANDLERS["detect_layout"]
+    monkeypatch.setitem(HANDLERS, "detect_layout", broken)  # pulih otomatis; jangan hapus handler asli
+    run_until_idle(db)
     assert ("score_highlights", "succeeded") in jobs(db)
     assert stream_status(db)[0] == "failed"
 
 
-def test_scoped_transcribe_does_not_touch_stream(db):
+def test_scoped_transcribe_does_not_touch_stream(db, monkeypatch):
+    # Orkestrasi saja: handler palsu (transkripsi berrentang asli diuji di T-027).
+    monkeypatch.delitem(HANDLERS, "transcribe")
     with db.begin() as conn:
         conn.execute(text("DELETE FROM jobs"))
         conn.execute(text("UPDATE source_streams SET status = 'ready'"))

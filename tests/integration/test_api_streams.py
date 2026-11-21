@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import text
 from yt_dlp.utils import DownloadError
 
-from klipin import streams
+from klipin import secrets, streams
 from klipin.media import ytdlp
 from klipin.worker.handlers import fake
 from tests.integration.test_pipeline import run_until_idle
@@ -142,8 +142,9 @@ def test_tc001_import_vod_creates_stream_and_download_job(api, engine, ydl, monk
     assert rows(engine, "SELECT platform, external_id, name FROM channels") == [
         ("youtube", "UCabcdefghijklmnopqrstuv", "NamaStreamer")]
 
-    # Setelah download selesai (handler palsu): processing → detect_layout + transcribe dibuat.
+    # Setelah download selesai (media fixture): processing → detect_layout + transcribe dibuat.
     monkeypatch.setattr(fake, "STEP_S", 0.0)
+    secrets.set_secret("transcriber_api_key", "kunci-uji")
     run_until_idle(engine)
     job_types = {t for (t,) in rows(engine, "SELECT job_type FROM jobs")}
     assert {"download", "detect_layout", "transcribe"} <= job_types

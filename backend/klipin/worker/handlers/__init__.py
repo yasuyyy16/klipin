@@ -26,4 +26,4 @@ def get_handler(job_type: str) -> Handler | None:
 
 
 # Handler asli mendaftarkan diri lewat @register saat modulnya diimpor.
-from klipin.worker.handlers import download  # noqa: F401
+from klipin.worker.handlers import download, transcribe  # noqa: F401
