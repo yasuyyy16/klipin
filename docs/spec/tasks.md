@@ -100,7 +100,7 @@
   - Selesai jika: TC-025, TC-026 lulus.
 
 ### US-009 Review & edit Klip
-- [ ] **T-040** Endpoint Klip: `GET /streams/{id}/clips`, `GET /clips/{id}`, `PATCH /clips/{id}`, `approve/reject/restore/unapprove`, `POST /streams/{id}/clips` (manual), `POST /clips/{id}/snap`, `GET /streams/{id}/transcript`, `GET /streams/{id}/timeline`, `GET /streams/{id}/waveform`, `GET /media/streams/{id}/source` (Range). _(FR-014, FR-015)_
+- [x] **T-040** Endpoint Klip: `GET /streams/{id}/clips`, `GET /clips/{id}`, `PATCH /clips/{id}`, `approve/reject/restore/unapprove`, `POST /streams/{id}/clips` (manual), `POST /clips/{id}/snap`, `GET /streams/{id}/transcript`, `GET /streams/{id}/timeline`, `GET /streams/{id}/waveform`, `GET /media/streams/{id}/source` (Range). _(FR-014, FR-015)_
   - Selesai jika: TC-027–TC-032 lulus.
 - [ ] **T-041** P-04 Review Klip: tiga kolom, kartu Klip (skor, kategori, alasan, badge), filter/urut, rincian Sinyal, timeline heatmap (klik lompat, seret buat Klip), pratinjau 9:16 tiruan CSS sesuai preset & Region Cam, pintasan `J/K/A/X/E/Spasi/←/→`, banner pipeline & konfirmasi pemakaian. _(FR-012, FR-014)_
   - Selesai jika: review 10 Klip hanya dengan keyboard (NFR-009); state kosong/memuat/error sesuai 08-ui-ux.md.

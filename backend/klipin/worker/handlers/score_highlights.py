@@ -16,6 +16,7 @@ from pathlib import Path
 from sqlalchemy import Connection, Engine, text
 
 from klipin import app_settings
+from klipin.clips import clock, defaults
 from klipin.db.models import utcnow
 from klipin.highlight import audio_signal, candidates, chat_signal, preselect
 from klipin.highlight.scoring import Weights, combine
@@ -72,26 +73,6 @@ def _store_llm(engine: Engine, stream_id: int, w: WindowInput, r: JudgeResult) -
              "k": w.start_ms})
 
 
-def _clock(ms: int) -> str:
-    s = ms // 1000
-    return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}" if s >= 3600 else f"{s // 60:02d}:{s % 60:02d}"
-
-
-def _defaults(conn: Connection, stream_id: int) -> tuple[int, int, str]:
-    """(preset_id, subtitle_style_id, nama untuk judul default)."""
-    row = conn.execute(text(
-        "SELECT c.default_layout_preset_id, s.suggested_layout_preset_id, c.name, s.title "
-        "FROM source_streams s LEFT JOIN channels c ON c.id = s.channel_id WHERE s.id = :s"),
-        {"s": stream_id}).one()
-    preset = row[0] or row[1] or conn.execute(text(
-        "SELECT id FROM layout_presets WHERE code = 'center_crop' ORDER BY id LIMIT 1")).scalar()
-    style_name = app_settings.value(conn, "default_subtitle_style")
-    style = conn.execute(text("SELECT id FROM subtitle_styles WHERE name = :n"),
-                         {"n": style_name}).scalar() or conn.execute(text(
-        "SELECT id FROM subtitle_styles ORDER BY is_builtin DESC, id LIMIT 1")).scalar()
-    return preset, style, (row[2] or row[3])
-
-
 def _judge(ctx: JobContext, windows: list[preselect.Window],
            factory: Callable[[Engine], HighlightJudge]) -> None:
     with ctx.engine.connect() as conn:
@@ -140,7 +121,7 @@ def _replace_clips(ctx: JobContext, chosen: list[candidates.Candidate], preset: 
                 {"s": ctx.source_stream_id, "a": c.start_ms, "b": c.end_ms, "score": c.source.score,
                  "au": row["audio"], "ch": row["chat"], "llm": row["llm"],
                  "p": int(c.source.partial), "cat": row["category"], "re": row["reason"],
-                 "t": row["title"] or f"{name} - {_clock(c.start_ms)}"[:100],
+                 "t": row["title"] or f"{name} - {clock(c.start_ms)}"[:100],
                  "preset": preset, "style": style})
 
 
@@ -184,7 +165,7 @@ def run(ctx: JobContext, *, judge_factory: Callable[[Engine], HighlightJudge] | 
         occupied = [tuple(r) for r in conn.execute(text(
             "SELECT start_ms, end_ms FROM clips WHERE source_stream_id = :s AND origin = 'auto' "
             "AND status IN (" + ",".join(f"'{st}'" for st in REVIEWED) + ")"), {"s": sid})]
-        preset, style, name = _defaults(conn, sid)
+        preset, style, name = defaults(conn, sid)
     scored = []
     for a, b, au, ch, st, llm, cat, reason, sa, sb, title in rows:
         done = st == "done"

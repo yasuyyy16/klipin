@@ -6,7 +6,7 @@ from typing import Annotated
 
 import structlog
 from fastapi import APIRouter, Query
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 
 from klipin.api.deps import DbSession
 from klipin.api.errors import ApiError
@@ -51,3 +51,11 @@ def stream_frame(stream_id: int, db: DbSession,
         raise ApiError(502, "UPSTREAM_ERROR", "Frame tidak bisa dibuat dari video sumber.")
     return Response(result.stdout, media_type="image/jpeg",
                     headers={"Cache-Control": "private, max-age=60"})
+
+
+@router.get("/streams/{stream_id}/source")
+def stream_source(stream_id: int, db: DbSession) -> FileResponse:
+    """Video sumber untuk pratinjau P-04/P-05; mendukung HTTP Range (206)."""
+    _, video = stream_video(db, stream_id)
+    media_type = "video/mp4" if video.suffix.lower() in (".mp4", ".m4v") else None
+    return FileResponse(video, media_type=media_type)
