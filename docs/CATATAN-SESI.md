@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-022.
+Terakhir diperbarui: 2026-11-21, setelah T-023.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021, T-022 selesai; task berikutnya: **T-023**.
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-023 selesai; task berikutnya: **T-024** (frontend, butuh `pnpm`).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (215 tes setelah T-022); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (235 tes setelah T-023); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -34,6 +34,9 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 12 | `estimated_size_bytes` = jumlah `filesize`/`filesize_approx` format terpilih (fallback `tbr` × durasi); `null` bila ada yang tak diketahui. Saat `null`, cek disk FR-001 **dilewati** (impor tetap jalan; disk penuh saat unduh ditangani Job) | `media/ytdlp.py`, `streams.py` (`check_disk`) | Menunggu |
 | 13 | Bentuk respons `GET /streams` (tidak dirinci di 06-api.md): item = `id, title, platform, source_type, status, duration_ms, error_message, created_at, channel_id, channel{id,name}, storage, clip_counts`; `clip_counts` memuat keenam status Klip. Detail menambah `source_url`, `detected_language`, `has_chat`, `suggested_layout_preset`, `active_jobs` (+ `stage`, `awaiting_confirmation`). `POST /streams` 201 memakai item yang sama untuk `stream` | `api/schemas/streams.py` | Menunggu, usul tambah ke 06-api.md |
 | 14 | Nilai `fields` error dikirim sebagai string (`required_bytes`, `free_bytes`, `existing_stream_id`), mengikuti tipe `fields` yang ada. Pesan duplikat: "Video ini sudah pernah diimpor." (tidak ada di 08-ui-ux §7). Timeout inspect 10 dtk → 502 `UPSTREAM_ERROR` "yt-dlp tidak menjawab dalam 10 detik. Coba lagi." | `streams.py` | Menunggu |
+| 15 | Kata reaksi (FR-010): kata alfanumerik cocok sebagai kata utuh tanpa beda huruf besar/kecil (`lol` cocok di "lol bang", tidak di "lolos"; `wkwk` tidak cocok "wkwkwkwk"); emoji/simbol cocok sebagai potongan teks. Dihitung saat impor | `media/chat_replay.py` (`reaction_matcher`) | Menunggu |
+| 16 | Jenis Pesan Chat: `liveChatTextMessageRenderer` → `text`; Paid Message/Sticker → `donation`; Membership + hadiah membership → `membership`; pesan sistem YouTube & ticker diabaikan (tidak disimpan). Chat tidak ada / gagal / VOD Kick → Pesan Chat lama dihapus dan `has_chat = 0` | `media/chat_replay.py`, `worker/handlers/download.py` | Menunggu |
+| 17 | Job `download`: video 0–90%, chat 90–99%; checkpoint `video_done` + `video_path` (coba ulang tidak mengunduh ulang video utuh); chat replay diunduh terpisah setelah video agar kegagalannya tidak menggagalkan video; `video_width/height/fps` dari metadata yt-dlp (bisa kosong). Disk penuh → "Ruang disk habis. Kosongkan ruang lalu coba lagi." | `worker/handlers/download.py` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
@@ -47,14 +50,15 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | Tab P-07 Akun Unggah, Caption, Gaya Subtitle (sengaja belum ditampilkan) | v1.1, T-050, T-045 |
 | Analisis live per blok (scope transcribe/score) | v1.1 (FR-013) |
 | `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini." | T-051 |
-| Inspect palsu untuk `KLIPIN_PROVIDERS=fake`: belum ada, sehingga mode fake tetap memanggil yt-dlp sungguhan (gratis). Tes API memalsukan `YoutubeDL`. Perlu diputuskan untuk uji UI/E2E tanpa jaringan | T-024, T-057 |
+| Sumber media palsu untuk `KLIPIN_PROVIDERS=fake`: inspect masih memanggil yt-dlp sungguhan (gratis), sedangkan Job `download` disimulasikan (handler palsu, tanpa file video). Tes memalsukan `YoutubeDL` / menyuntik fungsi unduh. Perlu diputuskan sebelum uji UI/E2E tanpa jaringan dan sebelum handler hilir (T-031 dst.) butuh file video di mode fake | T-024, T-031, T-057 |
 
 ## Cara kerja yang sudah berjalan
 
 - **Job dummy**: dengan `KLIPIN_PROVIDERS=fake`, Jenis Job tanpa handler asli memakai handler palsu
   (`worker/handlers/fake.py`, 20 langkah × 0,5 dtk, lanjut dari checkpoint). Pipeline palsu berjalan
   penuh `download → detect_layout + transcribe → score_highlights → ready`. Handler asli
-  didaftarkan dengan `@register("jenis")` dan otomatis menggantikan yang palsu.
+  didaftarkan dengan `@register("jenis")` dan otomatis menggantikan yang palsu. Modul handler
+  baru wajib diimpor di bagian bawah `worker/handlers/__init__.py` agar `@register` berjalan.
 - **DB uji**: buat Job dummy dengan `INSERT` ke `source_streams` + `jobs` di `KLIPIN_HOME` sementara.
 - **Keyring**: tes memakai keyring di memori (`tests/conftest.py`). Uji UI dengan server sungguhan
   menulis ke keyring OS asli; hapus lagi entri `klipin/*` setelahnya.

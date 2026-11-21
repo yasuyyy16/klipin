@@ -238,3 +238,39 @@ def download_vod(
     fps = downloaded.get("fps")
     return DownloadResult(path=path, width=downloaded.get("width"),
                           height=downloaded.get("height"), fps=float(fps) if fps else None)
+
+
+def download_live_chat(
+    url: str,
+    dest_dir: Path,
+    *,
+    should_cancel: Callable[[], bool] | None = None,
+    ydl_cls: type[YoutubeDL] = YoutubeDL,
+) -> Path | None:
+    """INT-02: unduh chat replay YouTube (`live_chat`, JSON-lines) ke `{dest_dir}/chat.json`.
+
+    `None` bila video tidak punya chat replay. Batal → `JobCancelled`; gagal → `YtdlpError`.
+    """
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    progress = _Progress(None, should_cancel)
+    opts = {
+        **_base_opts(),
+        "skip_download": True,
+        "writesubtitles": True,
+        "subtitleslangs": ["live_chat"],
+        "outtmpl": {"default": str(dest_dir / "chat.%(ext)s")},
+        "progress_hooks": [progress.hook],
+    }
+    try:
+        with ydl_cls(opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+    except DownloadCancelled as e:
+        raise JobCancelled from e
+    except YoutubeDLError as e:
+        raise YtdlpError(str(e)) from e
+    sub = (info.get("requested_subtitles") or {}).get("live_chat")
+    if not sub or not sub.get("filepath") or not Path(sub["filepath"]).is_file():
+        return None
+    target = dest_dir / "chat.json"
+    Path(sub["filepath"]).replace(target)
+    return target

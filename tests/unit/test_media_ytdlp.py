@@ -177,7 +177,8 @@ class _RangeServer:
 
         self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.url = f"http://127.0.0.1:{self.httpd.server_address[1]}"
-        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread = threading.Thread(target=self.httpd.serve_forever, args=(0.02,),
+                                       daemon=True)
 
     def __enter__(self):
         self.thread.start()
@@ -242,3 +243,45 @@ def test_download_http_error_is_ytdlp_error(server, tmp_path):
     with pytest.raises(ytdlp.YtdlpError) as e:
         ytdlp.download_vod(server.url, tmp_path, info=local_info(server.url, "/hilang.mp4"))
     assert "404" in e.value.detail
+
+
+# --- chat replay (INT-02) -----------------------------------------------------------------
+
+class _ChatYDL:
+    """YoutubeDL palsu: menulis file live_chat seperti yt-dlp (`chat.live_chat.json`)."""
+
+    opts: ClassVar[dict] = {}
+    has_chat = True
+
+    def __init__(self, opts):
+        _ChatYDL.opts = opts
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def extract_info(self, url, download):
+        if not _ChatYDL.has_chat:
+            return {"id": "x", "requested_subtitles": None}
+        path = Path(self.opts["outtmpl"]["default"].replace("%(ext)s", "live_chat.json"))
+        path.write_text('{"replayChatItemAction": {}}\n', encoding="utf-8")
+        return {"id": "x", "requested_subtitles": {"live_chat": {"filepath": str(path)}}}
+
+
+def test_download_live_chat_writes_chat_json(tmp_path):
+    _ChatYDL.has_chat = True
+    path = ytdlp.download_live_chat("https://www.youtube.com/watch?v=x", tmp_path,
+                                    ydl_cls=_ChatYDL)
+    assert path == tmp_path / "chat.json" and path.is_file()
+    assert not (tmp_path / "chat.live_chat.json").exists()
+    opts = _ChatYDL.opts
+    assert (opts["skip_download"], opts["writesubtitles"], opts["subtitleslangs"]) == (
+        True, True, ["live_chat"])
+
+
+def test_download_live_chat_none_without_replay(tmp_path):
+    _ChatYDL.has_chat = False
+    assert ytdlp.download_live_chat("https://www.youtube.com/watch?v=x", tmp_path,
+                                    ydl_cls=_ChatYDL) is None
