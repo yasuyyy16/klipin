@@ -80,7 +80,7 @@
 ### US-006 / US-007 Deteksi cam & Preset Layout
 - [x] **T-031** Handler `detect_layout`: sampling 1 frame/10 detik (maks. 600), MediaPipe (fallback OpenCV DNN), pengelompokan posisi wajah, aturan saran preset FR-006, simpan Region Cam (`source_stream_id`) & `suggested_layout_preset_id`, verifikasi default Kanal. _(FR-006)_
   - Selesai jika: TC-015, TC-016, TC-017 lulus.
-- [ ] **T-032** Modul `media/ffmpeg.py` filtergraph per preset: `gaming`, `split_two`, `center_crop`, `custom` (statis) → kanvas 1080×1920 tanpa bar hitam. _(FR-007)_
+- [x] **T-032** Modul `media/ffmpeg.py` filtergraph per preset: `gaming`, `split_two`, `center_crop`, `custom` (statis) → kanvas 1080×1920 tanpa bar hitam. _(FR-007)_
   - Selesai jika: TC-018 lulus; snapshot frame untuk tiap preset statis sesuai.
 - [ ] **T-033** Jalur crop dinamis `irl` (ikuti wajah, maks. pan 5%/detik) dan `podcast` (pembicara aktif dari diarization + wajah, tahan ≥ 1,5 detik) dengan sampling 5 fps di rentang Klip. _(FR-007, ADR-004)_
   - Selesai jika: TC-019 lulus; IRL tidak bergoyang (simpangan antar-detik ≤ 5% lebar).

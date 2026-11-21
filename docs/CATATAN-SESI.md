@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-031.
+Terakhir diperbarui: 2026-11-21, setelah T-032.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-031 selesai; task berikutnya: **T-032** (`media/ffmpeg.py` filtergraph per preset).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-032 selesai; task berikutnya: **T-033** (jalur crop dinamis `irl` & `podcast`).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (312 tes setelah T-031); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (321 tes setelah T-032); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -46,6 +46,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 24 | `Transcriber.transcribe(chunk, *, should_cancel=None)`: penyedia asinkron mengecek batal tiap ≤ 0,5 dtk (FR-023). AssemblyAI: `speech_models=["universal-2"]` eksplisit (dukungan `id` hanya terkonfirmasi di sana); transkrip + unggahan dihapus dari AssemblyAI setelah selesai/gagal/batal; status `error` → potongan `failed` (bukan retry); 403 diperlakukan seperti 401 sesuai INT-04 walau AssemblyAI juga memakai 403 untuk batas 20.000 request/5 menit; polling maks. 30 menit lalu dianggap sementara; wilayah US saja | `providers/transcriber/assemblyai.py` | Menunggu; uji ke API asli saat A/B T-061 |
 | 25 | FR-022: `transcribe` ditahan bila durasi > ambang konfirmasi **atau** > `max_audio_minutes_per_job` (batas berlaku walau konfirmasi mati); durasi tak diketahui → tidak ditahan. Perkiraan jendela LLM = round(jam × 120) (batas BR-003; cocok dengan contoh 06-api 2 j 10 m → 260), minimal 1. `usage_estimate` menambah `duration_ms`, `max_audio_ms`, `over_limit` (usul tambah ke 06-api.md). Rentang konfirmasi disimpan di `checkpoint.range` (bukan `scope_*`) agar Job tetap dianggap seluruh stream dan lanjut ke `score_highlights`; validasi: di dalam durasi, selesai > mulai, panjang ≤ batas. Konfirmasi tanpa rentang saat melebihi batas → 409. Setelah unduh, `duration_ms` diperbarui dari FFprobe file asli. GET /settings memuat `pricing_links`. P-04 menampilkan banner + dialog konfirmasi yang sama dengan P-06 | `usage.py`, `jobs.confirm_job`, `pipeline.on_success`, `handlers/download.py`, `components/UsageConfirmDialog.tsx` | Menunggu |
 | 26 | `detect_layout`: model BlazeFace + YuNet dibundel di `backend/klipin/layout/models/` (izin pemilik 2026-11-21; sumber, lisensi, SHA256 di README folder itu); per frame MediaPipe dulu, YuNet bila MediaPipe tidak menemukan wajah/gagal dimuat (tafsiran "fallback OpenCV DNN"). Sampel merata (lebar 960 px), minimal 10 untuk video pendek; frame dibaca dengan seek OpenCV, tanpa folder `frames/`. Ambang: tanpa wajah di ≥ 90% sampel → `center_crop`; ≥ 2 wajah di ≥ 50% sampel berwajah → `podcast` (bukan `split_two`) dengan `face_a`/`face_b` = wajah + 30%; satu wajah dengan sebaran pusat ≤ 8% dan luas < 25% → `gaming`; selain itu `irl` (tanpa region). Kotak `cam` = persegi panjang tepi panel yang **sisi terlemahnya** terkuat di peta gradien rata-rata antar-frame (cadangan: wajah + 40%); `content` = sisi frame di luar kolom cam bila lebarnya ≥ 50%, selain itu seluruh frame. Kanal dengan preset default: preset Kanal dipakai, region deteksi tetap disimpan untuk stream, kecocokan (IoU) dicatat di log Job. Pesan "Wajah tidak terdeteksi…" baru di log Job; tampil di UI pada T-041. Dependensi baru: `mediapipe` (membawa `opencv-contrib-python`), `numpy` | `layout/`, `worker/handlers/detect_layout.py` | Menunggu |
+| 27 | Filtergraph preset statis (`media/ffmpeg.py`): tiap panel *cover* (region dipotong di tengahnya ke rasio panel lalu di-scale tepat, tanpa `pad`), panel ditumpuk `vstack`; offset & ukuran crop selalu genap (offset ganjil menggeser chroma yuv420p). `split_two` memakai `split_pct` (seed 50). `custom`: urutan tumpukan = urutan region yang diberikan, 1 region → penuh, 2 region → `top_pct` (default 50, belum ada di seed); penyimpanan urutan menyusul di T-034/T-042. Region wajib tidak ada → jatuh ke `center_crop` dengan alasan (`LayoutPlan.fallback_reason`) | `media/ffmpeg.py` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
