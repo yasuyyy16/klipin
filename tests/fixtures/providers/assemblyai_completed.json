@@ -1,0 +1,33 @@
+{
+  "id": "9b3e5f70-0000-4000-8000-0000000000c1",
+  "status": "completed",
+  "audio_url": "https://cdn.assemblyai.com/upload/6f1c2b3a-0000-4000-8000-0000000000ab",
+  "speech_models": ["universal-2"],
+  "speech_model_used": "universal-2",
+  "language_code": "id",
+  "language_confidence": 0.9731,
+  "audio_duration": 602,
+  "text": "Halo semuanya. Gila, kaget banget!",
+  "confidence": 0.93,
+  "words": [
+    {"text": "Halo", "start": 400, "end": 720, "confidence": 0.99, "speaker": "A"},
+    {"text": "semuanya.", "start": 800, "end": 1360, "confidence": 0.98, "speaker": "A"},
+    {"text": "Gila,", "start": 6080, "end": 6400, "confidence": 0.62, "speaker": "B"},
+    {"text": "kaget", "start": 6480, "end": 6880, "confidence": 0.97, "speaker": "B"},
+    {"text": "banget!", "start": 6960, "end": 7440, "confidence": 0.96, "speaker": "B"}
+  ],
+  "utterances": [
+    {"speaker": "A", "text": "Halo semuanya.", "start": 400, "end": 1360, "confidence": 0.985,
+     "words": [
+       {"text": "Halo", "start": 400, "end": 720, "confidence": 0.99, "speaker": "A"},
+       {"text": "semuanya.", "start": 800, "end": 1360, "confidence": 0.98, "speaker": "A"}
+     ]},
+    {"speaker": "B", "text": "Gila, kaget banget!", "start": 6080, "end": 7440, "confidence": 0.85,
+     "words": [
+       {"text": "Gila,", "start": 6080, "end": 6400, "confidence": 0.62, "speaker": "B"},
+       {"text": "kaget", "start": 6480, "end": 6880, "confidence": 0.97, "speaker": "B"},
+       {"text": "banget!", "start": 6960, "end": 7440, "confidence": 0.96, "speaker": "B"}
+     ]}
+  ],
+  "error": null
+}

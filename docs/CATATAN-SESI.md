@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-028.
+Terakhir diperbarui: 2026-11-21, setelah T-029.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-028 selesai; task berikutnya: **T-029** (adapter AssemblyAI).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-029 selesai; task berikutnya: **T-030** (konfirmasi perkiraan pemakaian).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (274 tes setelah T-028); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (289 tes setelah T-029); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -43,13 +43,14 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 21 | `Transcriber.transcribe(AudioChunk) → TranscriptionResult` (utterance + kata, waktu **relatif potongan**, label pembicara lokal); retry & penjahitan di handler (T-027). Error: `TranscriberAuthError` (pesan FR-005), `TranscriberTransientError` (429/5xx/timeout), `TranscriberBadAudioError` (400). API key dicek di factory **juga di mode fake** (TC-014): dev/E2E mode fake perlu isi API key sembarang. `FakeTranscriber`: naskah Indonesia tetap di kode (kalimat tiap 6 dtk absolut, kata tiap 1 dtk, pembicara "0"/"1", tiap kata ke-7 confidence 0,55), `silent_ranges`, kegagalan per indeks potongan | `providers/transcriber/` | Menunggu |
 | 22 | Job `transcribe`: potongan i = [b_i, b_i + 10 mnt + 2 dtk] (b_i tiap 10 mnt dari awal rentang), audio FLAC mono 16 kHz diekstrak langsung per potongan (`ffmpeg -ss/-t`) ke `streams/{id}/audio/chunk_{start_ms}.flac`. "Batas potongan" untuk penjahitan = titik tengah zona tumpang tindih (b_i + 1 dtk), agar potongan kata di tepi audio tidak tercatat ganda. Label pembicara dicocokkan lewat kata sama (±300 ms) di zona tumpang tindih; tidak cocok → label baru (S3, …). Retry = 3 percobaan ulang (total 4 kiriman); semua error penyedia menandai potongan `failed`. Bahasa ditetapkan dari potongan pertama yang **berisi kata** (potongan hening tidak menetapkan bahasa) | `worker/handlers/transcribe.py` | Menunggu |
 | 23 | Adapter Deepgram: `Content-Type: audio/flac` (contoh di dokumentasi hanya wav/mp3; FLAC tercantum sebagai `encoding` yang didukung, belum diuji ke API sungguhan); bahasa terdeteksi `en-US` dinormalkan ke `en`; tanpa `results.utterances` kata dikelompokkan per pembicara berurutan; 408/422 dianggap sementara; 402 → pesan "Kredit Deepgram habis…". Dependensi baru: `httpx` (runtime), `respx` (dev) | `providers/transcriber/deepgram.py` | Menunggu; uji ke API asli saat A/B T-061 (butuh izin biaya) |
+| 24 | `Transcriber.transcribe(chunk, *, should_cancel=None)`: penyedia asinkron mengecek batal tiap ≤ 0,5 dtk (FR-023). AssemblyAI: `speech_models=["universal-2"]` eksplisit (dukungan `id` hanya terkonfirmasi di sana); transkrip + unggahan dihapus dari AssemblyAI setelah selesai/gagal/batal; status `error` → potongan `failed` (bukan retry); 403 diperlakukan seperti 401 sesuai INT-04 walau AssemblyAI juga memakai 403 untuk batas 20.000 request/5 menit; polling maks. 30 menit lalu dianggap sementara; wilayah US saja | `providers/transcriber/assemblyai.py` | Menunggu; uji ke API asli saat A/B T-061 |
 
 ## Sengaja ditunda ke task tertentu
 
 | Hal | Ke task |
 |---|---|
 | `POST /jobs/{id}/confirm` dengan `range`, `usage_estimate`, `pricing_links`; konfirmasi otomatis di pipeline (`awaiting_confirmation`). URL halaman harga penyedia **tidak ada** di spesifikasi, jangan ditebak | T-030 |
-| `providers/*.json` (respons rekaman per penyedia) dibuat dari dokumentasi resmi bersama adapternya (Deepgram sudah, T-028) | T-029, T-038 |
+| `providers/*.json` (respons rekaman per penyedia) dibuat dari dokumentasi resmi bersama adapternya (Deepgram T-028 & AssemblyAI T-029 sudah) | T-038 |
 | Model MediaPipe: versi 1.2.3 tidak menyertakan `solutions` maupun model wajah; perlu unduh `.tflite` (minta izin). Uji deteksi fixture wajah + IoU TC-015 terjadi di sini | T-031 |
 | Status Klip saat Job `render` sukses/gagal (pipeline baru menangani stream) | T-046 |
 | `cancel` pada `record_live` = `stop` (gabung segmen) ; event `live.position` | T-051 |

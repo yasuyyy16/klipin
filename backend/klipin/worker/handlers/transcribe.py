@@ -117,7 +117,7 @@ def _send(ctx: JobContext, transcriber: Transcriber, chunk: AudioChunk,
             conn.execute(text("UPDATE transcription_chunks SET attempts = attempts + 1 "
                               "WHERE id = :id"), {"id": chunk_id})
         try:
-            return transcriber.transcribe(chunk)
+            return transcriber.transcribe(chunk, should_cancel=ctx.cancel_event.is_set)
         except TranscriberTransientError as e:
             if attempt == len(BACKOFF_S):
                 ctx.log(f"potongan {chunk.index + 1}: {e.detail}; batas percobaan habis")

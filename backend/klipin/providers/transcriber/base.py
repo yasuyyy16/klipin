@@ -6,6 +6,7 @@ Retry (2/4/8 detik) juga di handler; adapter cukup melempar `TranscriberTransien
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -82,5 +83,9 @@ class Transcriber(ABC):
     name: str
 
     @abstractmethod
-    def transcribe(self, chunk: AudioChunk) -> TranscriptionResult:
-        """Kirim satu potongan audio; kata + timestamp + pembicara + bahasa terdeteksi."""
+    def transcribe(self, chunk: AudioChunk, *,
+                   should_cancel: Callable[[], bool] | None = None) -> TranscriptionResult:
+        """Kirim satu potongan audio; kata + timestamp + pembicara + bahasa terdeteksi.
+
+        Penyedia asinkron (polling) wajib mengecek `should_cancel` dan melempar `JobCancelled`.
+        """

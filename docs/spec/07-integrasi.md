@@ -1,5 +1,5 @@
 # Integrasi Pihak Ketiga: Klipin
-> Versi 2.1 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
+> Versi 2.2 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
 
 Fakta tentang layanan pihak ketiga di dokumen ini dicek pada 2026-11-20 dan **bisa berubah**. Harga tidak ditulis; cek di situs penyedia. Setiap integrasi dibungkus adapter (ADR-003) agar mudah diganti.
 
@@ -63,6 +63,8 @@ INT-08 dan INT-09 tidak memakai jaringan, jadi detailnya ada di 04-arsitektur.md
 - Endpoint pre-recorded menerima audio langsung dalam satu request sinkron. Ini cocok dengan desain potongan + checkpoint (`transcription_chunks`) tanpa perlu polling.
 
 **Alternatif AssemblyAI:** model Universal-2 mendukung 99 bahasa, deteksi bahasa otomatis, dan diarization untuk sebagian besar bahasa tersebut. Alurnya asinkron (unggah → buat transkrip → polling), jadi adapternya sedikit lebih kompleks. AssemblyAI cocok sebagai cadangan atau jika kualitasnya lebih baik pada uji 09-testing.md.
+
+- **Alur (AssemblyAI, dicek 2026-11-21):** per chunk `POST https://api.assemblyai.com/v2/upload` (body biner) → `upload_url`; `POST /v2/transcript` dengan `speech_models: ["universal-2"]` (nama model wajib eksplisit; default akun baru adalah model lain yang daftar bahasanya belum memastikan `id`), `speaker_labels`, `punctuate`, `format_text`, dan `language_code` **atau** `language_detection: true` (keduanya tidak boleh digabung); `GET /v2/transcript/{id}` tiap 3 detik sampai `completed`/`error` (cek pembatalan tiap putaran, maks. 30 menit); lalu `DELETE /v2/transcript/{id}` (best effort; ikut menghapus file unggahan). Waktu kata/utterance dalam milidetik, pembicara `A`/`B`/…, bahasa mis. `en_us` (dinormalkan ke `en`). Body error `{"error": "..."}`; status transkrip `error` → chunk `failed`; 429 saat polling ditunggu sesuai `Retry-After`. Wilayah US (`api.assemblyai.com`); wilayah EU tidak dipakai. Tes koneksi: `GET /v2/transcript?limit=1`. Dukungan `speaker_labels` untuk `id` belum terkonfirmasi di dokumentasi.
 
 Pilihan final ditentukan dengan uji A/B pada 3 sampel stream (Indo gaming, Indo podcast, Inggris) di 09-testing.md. Adapter memungkinkan ganti penyedia di Pengaturan.
 
@@ -237,6 +239,7 @@ sequenceDiagram
 - [TANYA] Apakah Pengguna mau mengajukan audit di YouTube dan/atau TikTok agar unggahan otomatis bisa publik? Tanpa audit, keduanya memaksa private (TikTok juga mewajibkan akun private). (Pengguna)
 - [TANYA] Apakah izin Meta (Instagram & Halaman) bisa dipakai tanpa App Review untuk akun yang punya peran di aplikasi sendiri? Konfirmasi di dokumentasi Meta saat implementasi.
 - [TANYA] Nama scope TikTok persis untuk Direct Post dan endpoint info kreator: konfirmasi di konsol TikTok for Developers.
+- [TANYA] Apakah `speaker_labels` AssemblyAI didukung untuk Bahasa Indonesia? Dokumentasi tidak menampilkan matriks fitur per bahasa; dicek saat A/B (T-061).
 - [TANYA] Apakah opsi deteksi bahasa Deepgram untuk audio pre-recorded tersedia untuk model & bahasa yang dipakai? Jika tidak, deteksi bahasa dilakukan oleh AssemblyAI/LLM pada chunk pertama atau Pengguna memilih bahasa saat impor.
 - [TANYA] Apakah ketentuan Kick mengizinkan pengambilan chat live lewat WebSocket publik? Sampai dikonfirmasi, INT-03 tetap mati secara default.
 - [TANYA] Masa berlaku refresh token Google untuk project OAuth berstatus Testing: dikonfirmasi di dokumentasi Google.
@@ -261,5 +264,6 @@ sequenceDiagram
 | Versi | Tanggal | Perubahan |
 |---|---|---|
 | 1.0 | 2026-11-20 | Draf awal |
+| 2.2 | 2026-11-21 | INT-04 AssemblyAI (T-029): alur unggah/transkrip/polling/hapus, `speech_models` Universal-2 eksplisit, aturan `language_code` vs `language_detection`, format error & endpoint tes koneksi dari dokumentasi resmi |
 | 2.1 | 2026-11-21 | INT-04 Deepgram (T-028, keputusan pemilik): `diarize_model=latest` menggantikan `diarize=true` yang deprecated; `detect_language` untuk chunk pertama; format error, 402, dan endpoint tes koneksi dari dokumentasi resmi |
 | 2.0 | 2026-11-20 | Menyesuaikan unggah multi-platform & Mode Unggah (01-prd.md v1.1): pola umum `Publisher`; INT-06 OAuth per platform (Google, TikTok, Meta); INT-07 YouTube jadi Could; tambah INT-10 TikTok Direct Post, INT-11 Instagram Reels, INT-12 Facebook Page Reels, INT-13 Paket Unggah manual; tugas LLM `write_captions`; batasan audit & kuota tiap platform (dicek 2026-11-20) |

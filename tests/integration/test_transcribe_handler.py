@@ -147,7 +147,7 @@ def test_tc013_permanent_failure_then_retry_resumes(db, fake, api):
 def test_tc014_missing_api_key_sends_nothing(db, home, memory_keyring, monkeypatch):
     secrets.delete_secret("transcriber_api_key")
     sent = []
-    monkeypatch.setattr(FakeTranscriber, "transcribe", lambda self, c: sent.append(c))
+    monkeypatch.setattr(FakeTranscriber, "transcribe", lambda self, c, **kw: sent.append(c))
     job_id = run_transcribe(db)
     assert job_row(db, job_id) == ("failed", MSG_API_KEY)
     assert sent == []

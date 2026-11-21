@@ -8,6 +8,7 @@ Error: 401/403 → API key; 400 → audio ditolak; 402 → kredit habis; 408/422
 boleh dicoba ulang (retry di handler `transcribe`).
 """
 
+from collections.abc import Callable
 from typing import Any
 
 import httpx
@@ -120,7 +121,8 @@ class DeepgramTranscriber(Transcriber):
         self._key = api_key
         self._client = client or httpx.Client()
 
-    def transcribe(self, chunk: AudioChunk) -> TranscriptionResult:
+    def transcribe(self, chunk: AudioChunk, *,
+                   should_cancel: Callable[[], bool] | None = None) -> TranscriptionResult:
         params = {"model": MODEL, "diarize_model": "latest", "punctuate": "true",
                   "smart_format": "true", "utterances": "true"}
         if chunk.language:

@@ -7,7 +7,7 @@ kasus yang harus dijahit handler (TC-011). Rentang hening (`silent_ranges`) tida
 Kegagalan bisa diskenariokan per indeks potongan (TC-012, TC-013).
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from klipin.providers.transcriber.base import (
     AudioChunk,
@@ -47,7 +47,8 @@ class FakeTranscriber(Transcriber):
     def _silent(self, start_ms: int, end_ms: int) -> bool:
         return any(start_ms < e and end_ms > s for s, e in self.silent_ranges)
 
-    def transcribe(self, chunk: AudioChunk) -> TranscriptionResult:
+    def transcribe(self, chunk: AudioChunk, *,
+                   should_cancel: Callable[[], bool] | None = None) -> TranscriptionResult:
         self.calls.append(chunk)
         if self.api_key.startswith("invalid"):  # sama dengan tes koneksi palsu (T-012)
             raise TranscriberAuthError("401 invalid api key")

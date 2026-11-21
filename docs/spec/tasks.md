@@ -72,7 +72,7 @@
   - Selesai jika: TC-011–TC-014 lulus dengan `FakeTranscriber`.
 - [x] **T-028** Adapter Deepgram (INT-04) + tes kontrak (sukses, 401, 429, 5xx). _(FR-005)_
   - Selesai jika: tes kontrak respx lulus; "Tes koneksi" berhasil dengan key asli (manual).
-- [ ] **T-029** [P] Adapter AssemblyAI (alur asinkron: unggah → transkrip → polling) + tes kontrak. _(FR-005)_
+- [x] **T-029** [P] Adapter AssemblyAI (alur asinkron: unggah → transkrip → polling) + tes kontrak. _(FR-005)_
   - Selesai jika: tes kontrak lulus; bisa dipilih di Pengaturan.
 - [ ] **T-030** Konfirmasi perkiraan pemakaian: tahan `transcribe` (`awaiting_confirmation`) untuk stream > N menit, `usage_estimate` di `GET /jobs/{id}`, `confirm` dengan opsi rentang, batas durasi per Job. _(FR-022)_
   - Selesai jika: TC-043, TC-044 lulus; banner di P-04 & dialog di P-06 berfungsi.

@@ -55,5 +55,8 @@ def get_transcriber(engine: Engine) -> Transcriber:
         from klipin.providers.transcriber.deepgram import DeepgramTranscriber
 
         return DeepgramTranscriber(key)
-    # shortcut: adapter AssemblyAI dibuat di T-029.
+    if name == "assemblyai":
+        from klipin.providers.transcriber.assemblyai import AssemblyAITranscriber
+
+        return AssemblyAITranscriber(key)
     raise TranscriberError(f"Penyedia transkripsi {name} belum tersedia di versi ini.")

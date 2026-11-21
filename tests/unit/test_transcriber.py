@@ -59,7 +59,11 @@ def test_real_mode_reads_provider_from_settings(keyed, monkeypatch):
         conn.exec_driver_sql("UPDATE settings SET value = 'null' "
                              "WHERE key = 'transcriber_provider'")
     assert tr.provider_name(keyed) == "assemblyai"
-    with pytest.raises(TranscriberError, match="assemblyai belum tersedia"):
+    assert tr.get_transcriber(keyed).name == "assemblyai"
+    with keyed.begin() as conn:
+        conn.exec_driver_sql("""UPDATE settings SET value = '"whisper"' """
+                             "WHERE key = 'transcriber_provider'")
+    with pytest.raises(TranscriberError, match="whisper belum tersedia"):
         tr.get_transcriber(keyed)
 
 

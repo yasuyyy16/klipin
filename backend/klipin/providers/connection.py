@@ -15,19 +15,19 @@ def test_connection(provider: str, value: str) -> dict:
             return {"ok": False, "provider": provider, "error": "401 invalid api key"}
         return {"ok": True, "provider": provider,
                 "latency_ms": int((time.perf_counter() - start) * 1000)}
-    if provider == "deepgram":
-        from klipin.providers.transcriber import TranscriberError, deepgram
+    if provider in ("deepgram", "assemblyai"):
+        from klipin.providers.transcriber import TranscriberError, assemblyai, deepgram
 
         start = time.perf_counter()
         try:
-            deepgram.test_key(value)
+            (deepgram if provider == "deepgram" else assemblyai).test_key(value)
         except TranscriberError as e:
             detail = getattr(e, "detail", "")
             return {"ok": False, "provider": provider,
                     "error": f"{e} ({detail})" if detail else str(e)}
         return {"ok": True, "provider": provider,
                 "latency_ms": int((time.perf_counter() - start) * 1000)}
-    # shortcut: tes koneksi AssemblyAI (T-029) dan Anthropic (T-038) dibuat bersama adapternya;
+    # shortcut: tes koneksi Anthropic (T-038) dibuat bersama adapternya;
     # sampai saat itu jawab jujur bahwa belum tersedia.
     return {"ok": False, "provider": provider,
             "error": "Tes koneksi untuk penyedia ini belum tersedia di versi ini."}
