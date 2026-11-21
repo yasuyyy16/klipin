@@ -62,7 +62,7 @@
   - Selesai jika: fixture chat jsonl terimpor dengan `offset_ms` benar; chat gagal tidak menggagalkan Job.
 - [x] **T-024** [P] P-01 Beranda: kolom URL + inspect otomatis, kartu metadata, tombol Impor VOD, daftar 5 stream terakhir, banner izin konten. _(FR-001)_
   - Selesai jika: dari URL fixture sampai Stream Sumber terbentuk dan berpindah ke P-04 dengan progres pipeline.
-- [ ] **T-025** [P] P-02 Daftar Stream (tabel, filter status, ukuran file). _(FR-024)_
+- [x] **T-025** [P] P-02 Daftar Stream (tabel, filter status, ukuran file). _(FR-024)_
   - Selesai jika: stream tampil dengan status real-time.
 
 ### US-005 Transkripsi otomatis

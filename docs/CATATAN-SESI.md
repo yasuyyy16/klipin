@@ -4,12 +4,12 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-024.
+Terakhir diperbarui: 2026-11-21, setelah T-025.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-024 selesai; task berikutnya: **T-025**.
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-025 selesai (US-001 lengkap); task berikutnya: **T-026**.
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
 - Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (243 tes setelah T-024); frontend `pnpm lint && pnpm build`.
 
@@ -39,6 +39,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 17 | Job `download`: video 0–90%, chat 90–99%; checkpoint `video_done` + `video_path` (coba ulang tidak mengunduh ulang video utuh); chat replay diunduh terpisah setelah video agar kegagalannya tidak menggagalkan video; `video_width/height/fps` dari metadata yt-dlp (bisa kosong). Disk penuh → "Ruang disk habis. Kosongkan ruang lalu coba lagi." | `worker/handlers/download.py` | Menunggu |
 | 18 | Mode `fake` memakai media fixture (`media/fake.py`), tanpa jaringan: semua URL YouTube/Kick sah dijawab dari `tests/fixtures/ytdlp/*.json` (ID dari URL, URL berisi "live" = live, durasi 30 dtk); Job `download` menyalin `gaming_facecam_30s.mp4` + `live_chat_spike.jsonl` ke `streams/{id}/` (±2 dtk progres simulasi) | `media/fake.py`, `streams.inspector`, `handlers/download.py` | Disetujui pemilik (2026-11-21) |
 | 19 | P-01: tanpa thumbnail (inspect tidak mengembalikan frame); badge hanya "Kanal dikenal" (nama preset default menunggu `GET /channels`, T-034); tombol "Mulai Rekam Live" & "Pilih file dari komputer" belum ditampilkan (tanpa kontrol palsu) — URL live memberi teks penjelasan; banner izin yang ditutup diingat di `localStorage`. P-04 sementara berisi header stream + progres pipeline (`components/PipelineProgress.tsx`) sampai T-041 | `frontend/src/pages/P01Beranda.tsx`, `P04ReviewKlip.tsx` | Menunggu |
+| 20 | P-02: filter status dikelompokkan Semua / Diproses (`queued,downloading,recording,processing`) / Siap direview / Gagal; 50 per halaman; kolom ukuran = total + rincian "Sumber · Render" (ukuran segmen live menyusul T-051); jumlah Klip hanya status yang > 0 | `frontend/src/pages/P02DaftarStream.tsx` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
@@ -53,6 +54,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | Analisis live per blok (scope transcribe/score) | v1.1 (FR-013) |
 | `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini."; tombol Rekam Live & checkbox "Analisis selama live" di P-01 | T-051, T-053 |
 | Tombol "Pilih file dari komputer" di P-01 | T-054 |
+| Aksi "Hapus video sumber" / "Hapus stream" di P-02 | T-055 |
 | Badge "Kanal dikenal: preset X tersimpan" | T-034 |
 
 ## Cara kerja yang sudah berjalan

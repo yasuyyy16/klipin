@@ -59,10 +59,12 @@ export const inspectStream = (url: string) => post<InspectResult>("/streams/insp
 export const importVod = (url: string) =>
   post<{ stream: Stream; job: Job }>("/streams", { url, mode: "vod" });
 
-export function useStreams(limit = 50, status = "") {
+export function useStreams(limit = 50, status = "", offset = 0) {
   return useQuery({
-    queryKey: ["streams", "list", limit, status],
-    queryFn: () => api<StreamList>(`/streams?limit=${limit}${status ? `&status=${status}` : ""}`),
+    queryKey: ["streams", "list", limit, status, offset],
+    queryFn: () =>
+      api<StreamList>(`/streams?limit=${limit}&offset=${offset}${status ? `&status=${status}` : ""}`),
+    placeholderData: (prev) => prev,
   });
 }
 
