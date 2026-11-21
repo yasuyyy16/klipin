@@ -94,7 +94,7 @@
   - Selesai jika: TC-021, TC-022 lulus.
 - [x] **T-037** `highlight_windows` (60 detik geser 30) + pra-seleksi BR-003. _(FR-011, BR-003)_
   - Selesai jika: unit test persentil & batas 120 jendela/jam.
-- [ ] **T-038** Antarmuka `HighlightJudge` + `FakeJudge` + adapter Anthropic (structured output, validasi Pydantic, retry, paralel 4, `max_tokens` 300, model dari `settings.llm_models`). _(FR-011, INT-05)_
+- [x] **T-038** Antarmuka `HighlightJudge` + `FakeJudge` + adapter Anthropic (structured output, validasi Pydantic, retry, paralel 4, `max_tokens` 300, model dari `settings.llm_models`). _(FR-011, INT-05)_
   - Selesai jika: TC-023, TC-024 lulus; tes kontrak adapter lulus.
 - [ ] **T-039** Handler `score_highlights`: gabung skor BR-001/BR-002, koreksi rentang BR-004, non-overlap BR-005, jumlah BR-006, buat Klip `auto`/`candidate` (preset dari default Kanal → saran → `center_crop`), `POST /streams/{id}/rescore` memakai cache. _(FR-012)_
   - Selesai jika: TC-025, TC-026 lulus.

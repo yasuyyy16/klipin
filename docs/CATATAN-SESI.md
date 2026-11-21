@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-037.
+Terakhir diperbarui: 2026-11-21, setelah T-038.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-037 selesai; task berikutnya: **T-038** (`HighlightJudge` + FakeJudge + adapter Anthropic).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-038 selesai; task berikutnya: **T-039** (handler `score_highlights` + Kandidat Klip + rescore).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (366 tes setelah T-037); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (384 tes setelah T-038); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -52,12 +52,13 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 30 | Sinyal Audio: loudness = RMS dBFS per detik dari PCM mono 8 kHz (FFmpeg pipe, lantai −100 dB untuk hening digital; dipilih alih-alih `ebur128`/`astats` karena lebih sederhana & bisa dibatalkan). Satuan = simpangan baku loudness seluruh stream (min. 1 dB). Pemetaan kenaikan terhadap rata-rata 60 dtk sebelumnya: ≤ 1σ → 0, 2σ → 0,8, ≥ 2,25σ → 1 (tanpa ambang 1σ, fluktuasi wajar audio tenang sudah ±0,4 sehingga melanggar "jendela tenang < 0,3"). Sinyal jendela = maksimum per detik. Video tanpa audio → array kosong (sinyal 0) | `highlight/audio_signal.py` | Menunggu; kalibrasi di T-062 |
 | 31 | Sinyal Chat: ember 10 dtk setelah digeser mundur `chat_delay_ms` (offset < 0 diabaikan); bobot reaksi 1,5× dihitung ulang dari teks dengan `chat_reaction_words` saat skor (kolom `is_reaction` hanya hasil impor); rasio terhadap median ember ±150 dtk dengan lantai 1 pesan; sinyal = (rasio − 1)/4 dibatasi 0–1 (5× median = 1); sinyal jendela = ember tertinggi yang beririsan. BR-002 (`highlight/scoring.py`): tanpa chat → `w_chat` dibagi proporsional ke audio & LLM; LLM null → bobot audio+chat dinormalkan ulang dan `partial = true`; skor dibulatkan ke integer 0–100. Pembaca Pengaturan lewat Connection: `app_settings.value` | `highlight/chat_signal.py`, `highlight/scoring.py` | Menunggu; kalibrasi di T-062 |
 | 32 | Pra-seleksi BR-003 (`highlight/preselect.py`): jendela terakhir dipotong di akhir rentang, jendela < 15 dtk tidak dibuat (kecuali stream sangat pendek: 1 jendela); tanpa chat skor pra-seleksi = Audio saja; persentil 80 inklusif (nilai sama → ikut); sampel acak 5% = ceil(5% × sisa) dengan seed id Stream Sumber (hasil sama saat rescore); batas = ceil(jam × 120), yang dipertahankan: skor tertinggi lalu sampel acak; `store` menghapus jendela di luar set baru dan tidak menimpa kolom `llm_*`. `build_windows(start, end, …)` menerima rentang transkripsi (pemanggilnya T-039). Dependensi dev baru: `hypothesis` | `highlight/preselect.py` | Menunggu |
+| 33 | `HighlightJudge` (`providers/llm/`): SDK resmi `anthropic` 2.x, `messages.create` + `output_config.format` (JSON schema tanpa batas angka; batas dicek Pydantic: skor 0–100, kategori enum, `reason` ≤ 200, `title` ≤ 100 karakter); `max_tokens` 300 dan `effort: low` (kontrol biaya INT-05) — **risiko**: model yang thinking-nya selalu aktif bisa terpotong di 300 token (dianggap `invalid` lalu dicoba ulang 1×); perlu dicek dengan panggilan sungguhan (butuh izin biaya). `max_tokens` terpotong → `invalid`; `refusal` → `failed` tanpa coba ulang; 429/5xx/529/jaringan → 3× backoff 2/4/8 + jitter (retry SDK dimatikan); 400/401/403/404 → `JudgeUnavailable` (seluruh Job memakai skor parsial, sesuai Fallback INT-05). Tanpa API key LLM atau tanpa `llm_models.judge_highlight` → `JudgeUnavailable` (bukan gagal Job). Tes koneksi Anthropic: `GET /v1/models?limit=1` (tanpa biaya token). Prompt: transkrip dipangkas 6.000 karakter (±1.500 token); "±90 detik" ditafsirkan pemanggil (T-039). Server-side `fallbacks` tidak dipakai karena model dipilih Pengguna. Dependensi baru: `anthropic` | `providers/llm/` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
 | Hal | Ke task |
 |---|---|
-| `providers/*.json` (respons rekaman per penyedia) dibuat dari dokumentasi resmi bersama adapternya (Deepgram T-028 & AssemblyAI T-029 sudah) | T-038 |
+| `providers/*.json` (respons rekaman per penyedia) dibuat dari dokumentasi resmi bersama adapternya (Deepgram T-028, AssemblyAI T-029, Anthropic judge T-038 sudah) | T-044, T-056 |
 | Status Klip saat Job `render` sukses/gagal (pipeline baru menangani stream) | T-046 |
 | `cancel` pada `record_live` = `stop` (gabung segmen) ; event `live.position` | T-051 |
 | Tab P-07 Akun Unggah, Caption, Gaya Subtitle (sengaja belum ditampilkan) | v1.1, T-050, T-045 |

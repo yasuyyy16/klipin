@@ -1,0 +1,10 @@
+{
+  "id": "msg_01UjiKlipin000000000000002",
+  "type": "message",
+  "role": "assistant",
+  "model": "model-uji",
+  "content": [{"type": "text", "text": "Menurut saya momen ini cukup seru, skor sekitar delapan puluh."}],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 812, "output_tokens": 18}
+}

@@ -5,6 +5,7 @@ description = "Klipin: ubah livestream jadi klip vertikal 9:16 (aplikasi lokal)"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.20.1",
+    "anthropic>=2.12.0",
     "concurrent-log-handler>=0.9.31",
     "fastapi>=0.165.0",
     "httpx>=0.28.1",

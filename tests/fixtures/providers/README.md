@@ -10,7 +10,7 @@ pola `{penyedia}_{kasus}.json`, misalnya `deepgram_success.json`, `deepgram_401.
 |---|---|
 | Deepgram | T-028 (ada) |
 | AssemblyAI | T-029 (ada) |
-| Anthropic (HighlightJudge, Translator, CaptionWriter) | T-038, T-044, T-056 |
+| Anthropic (HighlightJudge, Translator, CaptionWriter) | T-038 (ada), T-044, T-056 |
 | YouTube, TikTok, Instagram, Facebook | v1.1 |
 
 ## Deepgram (T-028)
@@ -43,3 +43,20 @@ transcript, pemilihan model, deteksi bahasa, label pembicara, batas laju). Isi f
 | `assemblyai_429.json` | 429 (body tidak dirinci di dokumentasi; dipakai `{"error": ...}`) |
 | `assemblyai_5xx.json` | 5xx (body tidak dirinci; dipakai `{"error": ...}`) |
 | `assemblyai_list.json` | 200 `GET /v2/transcript?limit=1` (tes koneksi; bentuk akun tanpa transkrip diasumsikan daftar kosong) |
+
+## Anthropic — HighlightJudge (T-038)
+
+Bentuk respons Messages API (`id`, `type: message`, `content[].text`, `stop_reason`, `usage`)
+dan body error `{type: "error", error: {type, message}, request_id}` dari dokumentasi Claude API.
+Nama model `model-uji` sengaja fiktif (nama model asli diambil dari Pengaturan). Tes kontrak
+mencegat HTTP SDK `anthropic` lewat `httpx2.MockTransport` (SDK 2.x memakai `httpx2`, bukan
+`httpx`, sehingga `respx` tidak berlaku).
+
+| File | Isi |
+|---|---|
+| `anthropic_judge_success.json` | 200, teks JSON skema `judge_highlight` |
+| `anthropic_judge_invalid.json` | 200, teks bebas (gagal validasi, TC-023) |
+| `anthropic_401.json` | `authentication_error` |
+| `anthropic_404.json` | `not_found_error` (model tidak ada) |
+| `anthropic_429.json` | `rate_limit_error` |
+| `anthropic_529.json` | `overloaded_error` |

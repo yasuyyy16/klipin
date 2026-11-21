@@ -1,0 +1,12 @@
+{
+  "id": "msg_01UjiKlipin000000000000001",
+  "type": "message",
+  "role": "assistant",
+  "model": "model-uji",
+  "content": [
+    {"type": "text", "text": "{\"score\": 82, \"category\": \"hype\", \"reason\": \"Reaksi kaget besar saat jumpscare, chat meledak\", \"suggested_start_s\": 12.4, \"suggested_end_s\": 56.0, \"title\": \"Jumpscare paling brutal\"}"}
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 812, "output_tokens": 61}
+}
