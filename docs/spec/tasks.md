@@ -90,7 +90,7 @@
 ### US-008 Deteksi Kandidat Klip
 - [x] **T-035** Sinyal Audio (loudness per detik → z-score → lonjakan 0–1). _(FR-009)_
   - Selesai jika: TC-020 lulus.
-- [ ] **T-036** [P] Sinyal Chat (per 10 detik, bobot kata reaksi 1,5×, normalisasi median 5 menit, geser Jeda Chat) + pembagian bobot saat chat tidak ada. _(FR-010, BR-002)_
+- [x] **T-036** [P] Sinyal Chat (per 10 detik, bobot kata reaksi 1,5×, normalisasi median 5 menit, geser Jeda Chat) + pembagian bobot saat chat tidak ada. _(FR-010, BR-002)_
   - Selesai jika: TC-021, TC-022 lulus.
 - [ ] **T-037** `highlight_windows` (60 detik geser 30) + pra-seleksi BR-003. _(FR-011, BR-003)_
   - Selesai jika: unit test persentil & batas 120 jendela/jam.
