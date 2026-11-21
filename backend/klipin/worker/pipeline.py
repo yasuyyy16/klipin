@@ -8,6 +8,7 @@ from typing import Any, Protocol
 import structlog
 from sqlalchemy import Connection, text
 
+from klipin import usage
 from klipin.db.models import utcnow
 
 log = structlog.get_logger(__name__)
@@ -80,8 +81,10 @@ def on_success(conn: Connection, job: JobInfo) -> None:
     if job.job_type in ("download", "record_live"):
         set_stream_status(conn, stream, "processing")
         create_job(conn, "detect_layout", stream)
-        # shortcut: konfirmasi pemakaian (awaiting_confirmation, FR-022) ditambahkan di T-030.
-        create_job(conn, "transcribe", stream)
+        duration = conn.execute(text("SELECT duration_ms FROM source_streams WHERE id = :s"),
+                                {"s": stream}).scalar()
+        create_job(conn, "transcribe", stream,
+                   awaiting_confirmation=int(usage.needs_confirmation(conn, duration)))
     elif job.job_type == "transcribe":
         create_job(conn, "score_highlights", stream)
     if job.job_type in ("detect_layout", "score_highlights") and all(

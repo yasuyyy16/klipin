@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from klipin import jobs
+from klipin import jobs, usage
 from klipin.api.deps import DbSession
 from klipin.api.errors import ApiError
 from klipin.api.schemas.jobs import (
@@ -13,6 +13,7 @@ from klipin.api.schemas.jobs import (
     JobListResponse,
     JobResponse,
     JobRetryResponse,
+    UsageEstimate,
 )
 from klipin.db.models import Job, SourceStream
 
@@ -43,8 +44,13 @@ def list_jobs(db: DbSession, status: str | None = None, source_stream_id: int | 
 
 @router.get("/{job_id}")
 def get_job(job_id: int, db: DbSession) -> JobDetailResponse:
-    # shortcut: usage_estimate untuk Job yang menunggu konfirmasi ditambahkan di T-030.
-    return _with_titles(db, [jobs.get_job(db, job_id)], JobDetailResponse)[0]
+    job = jobs.get_job(db, job_id)
+    detail = _with_titles(db, [job], JobDetailResponse)[0]
+    if job.job_type == "transcribe" and job.awaiting_confirmation and job.source_stream_id:
+        estimate = usage.usage_estimate(db.connection(), job.source_stream_id,
+                                        (job.checkpoint or {}).get("range"))
+        detail = detail.model_copy(update={"usage_estimate": UsageEstimate(**estimate)})
+    return detail
 
 
 @router.post("/{job_id}/cancel")
@@ -59,5 +65,6 @@ def retry_job(job_id: int, db: DbSession) -> JobRetryResponse:
 
 @router.post("/{job_id}/confirm")
 def confirm_job(job_id: int, body: JobConfirmRequest, db: DbSession) -> JobResponse:
-    job = jobs.confirm_job(db, job_id, body.proceed, body.range is not None)
+    job = jobs.confirm_job(db, job_id, body.proceed,
+                           body.range.model_dump() if body.range else None)
     return JobResponse.model_validate(job)

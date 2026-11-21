@@ -3,6 +3,7 @@
 from sqlalchemy import Connection, func, select, text
 from sqlalchemy.orm import Session
 
+from klipin import usage
 from klipin.api.errors import ApiError
 from klipin.db.models import Job, SourceStream, utcnow
 from klipin.worker import pipeline
@@ -92,16 +93,33 @@ def retry_job(session: Session, job_id: int) -> Job:
     return retry
 
 
-def confirm_job(session: Session, job_id: int, proceed: bool, has_range: bool) -> Job:
+def confirm_job(session: Session, job_id: int, proceed: bool,
+                range_ms: dict[str, int] | None) -> Job:
+    """FR-022: lanjutkan Job `transcribe` yang ditahan, seluruhnya atau rentang tertentu."""
     job = _get(session, job_id)
     if job.job_type != "transcribe" or not job.awaiting_confirmation or job.status != "queued":
         raise ApiError(409, "INVALID_STATE", "Job ini tidak menunggu konfirmasi.")
-    if has_range:
-        # shortcut: konfirmasi dengan rentang + batas durasi per Job dibuat di T-030 (FR-022).
-        raise ApiError(400, "VALIDATION_ERROR", "Konfirmasi dengan rentang belum didukung.",
-                       {"range": "Konfirmasi dengan rentang belum didukung."})
-    if proceed:
-        job.awaiting_confirmation = 0
-        session.commit()
-        session.refresh(job)
+    if not proceed:
+        return job
+    conn = session.connection()
+    _, max_ms = usage.limits(conn)
+    duration = session.scalar(select(SourceStream.duration_ms)
+                              .where(SourceStream.id == job.source_stream_id)) or 0
+    if range_ms is not None:
+        start, end = range_ms["start_ms"], range_ms["end_ms"]
+        if end <= start or (duration and end > duration):
+            raise ApiError(400, "VALIDATION_ERROR", "Rentang waktu tidak valid.",
+                           {"range": "Rentang harus di dalam durasi stream dan selesai setelah mulai."})
+        if end - start > max_ms:
+            msg = f"Rentang melebihi batas durasi per Job ({usage.format_duration(max_ms)})."
+            raise ApiError(400, "VALIDATION_ERROR", msg, {"range": msg})
+        job.checkpoint = {**(job.checkpoint or {}), "range": {"start_ms": start, "end_ms": end}}
+    elif duration > max_ms:
+        raise ApiError(409, "INVALID_STATE",
+                       f"Durasi audio {usage.format_duration(duration)} melebihi batas per Job "
+                       f"({usage.format_duration(max_ms)}). Pilih rentang waktu tertentu atau "
+                       "naikkan batas di Pengaturan.")
+    job.awaiting_confirmation = 0
+    session.commit()
+    session.refresh(job)
     return job

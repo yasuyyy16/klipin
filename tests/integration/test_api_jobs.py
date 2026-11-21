@@ -160,10 +160,3 @@ def test_confirm(api, db):
     assert ok.json()["awaiting_confirmation"] is False
     assert api.post(f"/api/v1/jobs/{job_id}/confirm",
                     json={"proceed": True}).status_code == 409
-
-
-def test_confirm_with_range_not_supported_yet(api, db):
-    job_id = add_job(db, awaiting_confirmation=1)
-    resp = api.post(f"/api/v1/jobs/{job_id}/confirm",
-                    json={"proceed": True, "range": {"start_ms": 0, "end_ms": 60000}})
-    assert resp.status_code == 400

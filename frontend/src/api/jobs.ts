@@ -21,8 +21,18 @@ export interface Job {
   stream_title: string | null;
 }
 
+export interface UsageEstimate {
+  audio_ms: number;
+  estimated_llm_windows: number;
+  duration_ms: number;
+  max_audio_ms: number;
+  over_limit: boolean;
+  pricing_links: { transcriber: string | null; llm: string | null };
+}
+
 export interface JobDetail extends Job {
   log_tail: string | null;
+  usage_estimate: UsageEstimate | null;
 }
 
 export interface JobList {
@@ -51,8 +61,9 @@ export function useActiveJobs() {
 
 export const cancelJob = (id: number) => post<Job>(`/jobs/${id}/cancel`);
 export const retryJob = (id: number) => post<{ job: Job }>(`/jobs/${id}/retry`);
-export const confirmJob = (id: number, proceed: boolean) =>
-  post<Job>(`/jobs/${id}/confirm`, { proceed, range: null });
+export const confirmJob = (id: number, proceed: boolean,
+  range: { start_ms: number; end_ms: number } | null = null) =>
+  post<Job>(`/jobs/${id}/confirm`, { proceed, range });
 
 export function useJobs(status: string) {
   return useQuery({

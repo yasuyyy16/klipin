@@ -1,5 +1,5 @@
 # Integrasi Pihak Ketiga: Klipin
-> Versi 2.2 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
+> Versi 2.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
 
 Fakta tentang layanan pihak ketiga di dokumen ini dicek pada 2026-11-20 dan **bisa berubah**. Harga tidak ditulis; cek di situs penyedia. Setiap integrasi dibungkus adapter (ADR-003) agar mudah diganti.
 
@@ -229,6 +229,15 @@ sequenceDiagram
 | Penjadwalan posting | — | Facebook Reels mendukung status terjadwal; platform lain berbeda-beda; di luar lingkup (01-prd.md 5.2) |
 | Transkripsi lokal (Whisper / faster-whisper) | ADR-003 | Adapter tambahan untuk mode offline jika punya GPU |
 
+## Tautan halaman harga (FR-022)
+Klipin tidak menampilkan harga; dialog konfirmasi pemakaian dan Pengaturan hanya menautkan halaman harga resmi berikut (dicek 2026-11-21, keputusan pemilik saat T-030):
+
+| Penyedia | Halaman |
+|---|---|
+| Deepgram | https://deepgram.com/pricing |
+| AssemblyAI | https://www.assemblyai.com/pricing |
+| Anthropic (Claude API) | https://claude.com/pricing#api |
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] Deepgram dipilih sebagai default karena request sinkron cocok dengan checkpoint per chunk; keputusan bisa dibalik setelah uji A/B kualitas Bahasa Indonesia (09-testing.md).
 - [ASUMSI] Chunk audio 10 menit berada di bawah batas ukuran/durasi request penyedia; batas pasti dicek saat implementasi.
@@ -264,6 +273,7 @@ sequenceDiagram
 | Versi | Tanggal | Perubahan |
 |---|---|---|
 | 1.0 | 2026-11-20 | Draf awal |
+| 2.3 | 2026-11-21 | Tautan halaman harga resmi untuk FR-022 (T-030) |
 | 2.2 | 2026-11-21 | INT-04 AssemblyAI (T-029): alur unggah/transkrip/polling/hapus, `speech_models` Universal-2 eksplisit, aturan `language_code` vs `language_detection`, format error & endpoint tes koneksi dari dokumentasi resmi |
 | 2.1 | 2026-11-21 | INT-04 Deepgram (T-028, keputusan pemilik): `diarize_model=latest` menggantikan `diarize=true` yang deprecated; `detect_language` untuk chunk pertama; format error, 402, dan endpoint tes koneksi dari dokumentasi resmi |
 | 2.0 | 2026-11-20 | Menyesuaikan unggah multi-platform & Mode Unggah (01-prd.md v1.1): pola umum `Publisher`; INT-06 OAuth per platform (Google, TikTok, Meta); INT-07 YouTube jadi Could; tambah INT-10 TikTok Direct Post, INT-11 Instagram Reels, INT-12 Facebook Page Reels, INT-13 Paket Unggah manual; tugas LLM `write_captions`; batasan audit & kuota tiap platform (dicek 2026-11-20) |

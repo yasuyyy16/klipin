@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-029.
+Terakhir diperbarui: 2026-11-21, setelah T-030.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-029 selesai; task berikutnya: **T-030** (konfirmasi perkiraan pemakaian).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-030 selesai (US-005 transkripsi lengkap); task berikutnya: **T-031** (`detect_layout`, butuh model MediaPipe — minta izin unduh).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (289 tes setelah T-029); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (301 tes setelah T-030); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -44,12 +44,12 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 22 | Job `transcribe`: potongan i = [b_i, b_i + 10 mnt + 2 dtk] (b_i tiap 10 mnt dari awal rentang), audio FLAC mono 16 kHz diekstrak langsung per potongan (`ffmpeg -ss/-t`) ke `streams/{id}/audio/chunk_{start_ms}.flac`. "Batas potongan" untuk penjahitan = titik tengah zona tumpang tindih (b_i + 1 dtk), agar potongan kata di tepi audio tidak tercatat ganda. Label pembicara dicocokkan lewat kata sama (±300 ms) di zona tumpang tindih; tidak cocok → label baru (S3, …). Retry = 3 percobaan ulang (total 4 kiriman); semua error penyedia menandai potongan `failed`. Bahasa ditetapkan dari potongan pertama yang **berisi kata** (potongan hening tidak menetapkan bahasa) | `worker/handlers/transcribe.py` | Menunggu |
 | 23 | Adapter Deepgram: `Content-Type: audio/flac` (contoh di dokumentasi hanya wav/mp3; FLAC tercantum sebagai `encoding` yang didukung, belum diuji ke API sungguhan); bahasa terdeteksi `en-US` dinormalkan ke `en`; tanpa `results.utterances` kata dikelompokkan per pembicara berurutan; 408/422 dianggap sementara; 402 → pesan "Kredit Deepgram habis…". Dependensi baru: `httpx` (runtime), `respx` (dev) | `providers/transcriber/deepgram.py` | Menunggu; uji ke API asli saat A/B T-061 (butuh izin biaya) |
 | 24 | `Transcriber.transcribe(chunk, *, should_cancel=None)`: penyedia asinkron mengecek batal tiap ≤ 0,5 dtk (FR-023). AssemblyAI: `speech_models=["universal-2"]` eksplisit (dukungan `id` hanya terkonfirmasi di sana); transkrip + unggahan dihapus dari AssemblyAI setelah selesai/gagal/batal; status `error` → potongan `failed` (bukan retry); 403 diperlakukan seperti 401 sesuai INT-04 walau AssemblyAI juga memakai 403 untuk batas 20.000 request/5 menit; polling maks. 30 menit lalu dianggap sementara; wilayah US saja | `providers/transcriber/assemblyai.py` | Menunggu; uji ke API asli saat A/B T-061 |
+| 25 | FR-022: `transcribe` ditahan bila durasi > ambang konfirmasi **atau** > `max_audio_minutes_per_job` (batas berlaku walau konfirmasi mati); durasi tak diketahui → tidak ditahan. Perkiraan jendela LLM = round(jam × 120) (batas BR-003; cocok dengan contoh 06-api 2 j 10 m → 260), minimal 1. `usage_estimate` menambah `duration_ms`, `max_audio_ms`, `over_limit` (usul tambah ke 06-api.md). Rentang konfirmasi disimpan di `checkpoint.range` (bukan `scope_*`) agar Job tetap dianggap seluruh stream dan lanjut ke `score_highlights`; validasi: di dalam durasi, selesai > mulai, panjang ≤ batas. Konfirmasi tanpa rentang saat melebihi batas → 409. Setelah unduh, `duration_ms` diperbarui dari FFprobe file asli. GET /settings memuat `pricing_links`. P-04 menampilkan banner + dialog konfirmasi yang sama dengan P-06 | `usage.py`, `jobs.confirm_job`, `pipeline.on_success`, `handlers/download.py`, `components/UsageConfirmDialog.tsx` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
 | Hal | Ke task |
 |---|---|
-| `POST /jobs/{id}/confirm` dengan `range`, `usage_estimate`, `pricing_links`; konfirmasi otomatis di pipeline (`awaiting_confirmation`). URL halaman harga penyedia **tidak ada** di spesifikasi, jangan ditebak | T-030 |
 | `providers/*.json` (respons rekaman per penyedia) dibuat dari dokumentasi resmi bersama adapternya (Deepgram T-028 & AssemblyAI T-029 sudah) | T-038 |
 | Model MediaPipe: versi 1.2.3 tidak menyertakan `solutions` maupun model wajah; perlu unduh `.tflite` (minta izin). Uji deteksi fixture wajah + IoU TC-015 terjadi di sini | T-031 |
 | Status Klip saat Job `render` sukses/gagal (pipeline baru menangani stream) | T-046 |
@@ -58,6 +58,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | Analisis live per blok (scope transcribe/score) | v1.1 (FR-013) |
 | `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini."; tombol Rekam Live & checkbox "Analisis selama live" di P-01 | T-051, T-053 |
 | Transkripsi rentang (Penanda Live) belum mencegah kata ganda dengan transkripsi seluruh stream sesudahnya ("hanya rentang yang belum ditranskripsi") | T-051, T-052 |
+| `score_highlights` harus membatasi jendela ke rentang yang ditranskripsi (`checkpoint.range` Job transcribe terakhir) | T-037, T-039 |
 | Tombol "Pilih file dari komputer" di P-01 | T-054 |
 | Aksi "Hapus video sumber" / "Hapus stream" di P-02 | T-055 |
 | Badge "Kanal dikenal: preset X tersimpan" | T-034 |

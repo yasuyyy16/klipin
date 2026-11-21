@@ -1,5 +1,5 @@
 # Skema Database: Klipin
-> Versi 1.2 · 2026-11-20 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 04-arsitektur.md
+> Versi 1.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 04-arsitektur.md
 
 Database: **SQLite 3.35+** (butuh `RETURNING`), mode WAL, `PRAGMA foreign_keys = ON`, `PRAGMA busy_timeout = 5000`. Dikelola dengan SQLAlchemy 2 + Alembic. File: `{KLIPIN_HOME}/klipin.db`.
 
@@ -735,7 +735,7 @@ INSERT INTO settings (key, value) VALUES
  ('live_block_minutes',       '5'),                                       -- FR-013
  ('live_last_n_default_s',    '60'),                                      -- FR-004
  ('max_heavy_jobs',           '1'),
- ('confirm_usage_over_min',   '30'),                                      -- FR-022
+ ('confirm_usage_over_min',   '30'),                                      -- FR-022; null = konfirmasi mati, 0 = selalu
  ('max_audio_minutes_per_job','600'),
  ('transcriber_provider',     '"deepgram"'),
  ('llm_provider',             '"anthropic"'),
@@ -809,5 +809,6 @@ Backup: SQLite online backup harian ke `backups/klipin-YYYYMMDD.db`, simpan 7 te
 | Versi | Tanggal | Perubahan |
 |---|---|---|
 | 1.0 | 2026-11-20 | Draf awal |
+| 1.3 | 2026-11-21 | Keputusan pemilik (T-030): `confirm_usage_over_min` boleh JSON `null` = konfirmasi pemakaian mati (FR-022), `0` = selalu minta; batas `max_audio_minutes_per_job` tetap berlaku |
 | 1.2 | 2026-11-20 | Hasil CEK #1, #7, #9: `jobs.purpose` + `preview_at_ms` untuk render pratinjau; seed `llm_models`, `kick_live_chat_enabled`; catatan default penyedia |
 | 1.1 | 2026-11-20 | Menyesuaikan unggah multi-platform & Mode Unggah (01-prd.md v1.1): `upload_accounts` multi-platform (+`target_id`, `account_status`, `token_expires_at`, satu akun aktif per platform); `uploads` +`platform`, `mode`, `caption`, `hashtags`, `platform_publish_id`, `posted_as_private`, `external_post_id`, akun opsional untuk manual; BR-009 per platform; `clips.caption_drafts`; enum & seed baru (termasuk `manual_upload_urls` untuk INT-13) |

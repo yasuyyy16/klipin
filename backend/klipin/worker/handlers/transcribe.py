@@ -9,7 +9,8 @@
 - Pembicara: label lokal per potongan → S1, S2, … dengan mencocokkan kata di zona tumpang
   tindih terhadap kata tersimpan; yang tidak cocok mendapat label baru.
 - Retry 429/5xx/timeout: 3× dengan backoff 2/4/8 detik + jitter; hanya potongan itu.
-- `scope_start_ms`/`scope_end_ms` membatasi rentang (Penanda Live).
+- `scope_start_ms`/`scope_end_ms` membatasi rentang (Penanda Live); `checkpoint.range` berisi
+  rentang pilihan Pengguna saat konfirmasi pemakaian (FR-022) dan tetap dianggap Job seluruh stream.
 """
 
 import random
@@ -214,8 +215,10 @@ def run(ctx: JobContext, *,
         raise RuntimeError(MSG_NO_SOURCE)
     video_path = Path(video)
     total = duration or probe.duration_ms(video_path)
-    start = max(0, ctx.scope_start_ms or 0)
-    end = min(ctx.scope_end_ms or total, total)
+    # Rentang: scope Job (Penanda Live) atau rentang pilihan saat konfirmasi (FR-022).
+    chosen = ctx.checkpoint.get("range") or {}
+    start = max(0, ctx.scope_start_ms or chosen.get("start_ms") or 0)
+    end = min(ctx.scope_end_ms or chosen.get("end_ms") or total, total)
     plan = plan_chunks(start, end)
     rows = _ensure_chunks(ctx.engine, stream_id, plan)
     audio_dir = stream_dir(stream_id) / "audio"
@@ -242,7 +245,7 @@ def run(ctx: JobContext, *,
                              {"l": language, "now": utcnow(), "s": stream_id})
         ctx.log(f"{label}: {words} kata")
         done += 1
-        ctx.save_checkpoint({"chunks_done": done, "chunks_total": len(plan)})
+        ctx.save_checkpoint({**ctx.checkpoint, "chunks_done": done, "chunks_total": len(plan)})
     ctx.progress(100, "Selesai")
 
 

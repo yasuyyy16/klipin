@@ -8,7 +8,7 @@ EXPECTED_KEYS = {
     "confirm_usage_over_min", "max_audio_minutes_per_job", "transcriber_provider",
     "llm_provider", "llm_models", "kick_live_chat_enabled", "upload_default_mode",
     "upload_platforms_enabled", "caption_templates", "manual_upload_urls",
-    "default_subtitle_style", "output_dir", "download_max_height", "secrets", "storage",
+    "default_subtitle_style", "output_dir", "download_max_height", "secrets", "storage", "pricing_links",
 }
 
 

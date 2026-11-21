@@ -207,6 +207,7 @@ function TabApi({ s }: { s: Settings }) {
     confirm_usage_over_min: s.confirm_usage_over_min,
     max_audio_minutes_per_job: s.max_audio_minutes_per_job,
   });
+  const [lastThreshold, setLastThreshold] = useState(s.confirm_usage_over_min ?? 30);
   const setModel = (k: keyof Settings["llm_models"], v: string) =>
     setForm((f) => ({ ...f, llm_models: { ...f.llm_models, [k]: v.trim() ? v.trim() : null } }));
   return (
@@ -255,15 +256,36 @@ function TabApi({ s }: { s: Settings }) {
           </div>
         </fieldset>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Minta konfirmasi untuk stream lebih dari (menit)" hint="0 = selalu minta konfirmasi." error={errors.confirm_usage_over_min}>
-            {(p) => <input {...p} type="number" min={0} className={inputClass} value={form.confirm_usage_over_min}
-              onChange={(e) => setForm((f) => ({ ...f, confirm_usage_over_min: Number(e.target.value) }))} />}
-          </Field>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 font-medium">
+              <input type="checkbox" checked={form.confirm_usage_over_min !== null}
+                onChange={(e) => setForm((f) => ({ ...f, confirm_usage_over_min: e.target.checked ? lastThreshold : null }))} />
+              Minta konfirmasi sebelum transkripsi
+            </label>
+            <Field label="Untuk stream lebih dari (menit)" hint="0 = selalu minta konfirmasi." error={errors.confirm_usage_over_min}>
+              {(p) => <input {...p} type="number" min={0} className={inputClass} disabled={form.confirm_usage_over_min === null}
+                value={form.confirm_usage_over_min ?? lastThreshold}
+                onChange={(e) => {
+                  setLastThreshold(Number(e.target.value));
+                  setForm((f) => ({ ...f, confirm_usage_over_min: Number(e.target.value) }));
+                }} />}
+            </Field>
+          </div>
           <Field label="Batas durasi audio per Job (menit)" error={errors.max_audio_minutes_per_job}>
             {(p) => <input {...p} type="number" min={1} className={inputClass} value={form.max_audio_minutes_per_job}
               onChange={(e) => setForm((f) => ({ ...f, max_audio_minutes_per_job: Number(e.target.value) }))} />}
           </Field>
         </div>
+        <p className="text-xs text-muted">
+          Batas durasi tetap berlaku walau konfirmasi dimatikan. Klipin tidak menampilkan harga;{" "}
+          cek halaman harga:{" "}
+          {[["Deepgram", "deepgram"], ["AssemblyAI", "assemblyai"], ["Anthropic", "anthropic"]].map(([label, k], i) => (
+            <span key={k}>
+              {i > 0 && " · "}
+              <a href={s.pricing_links[k]} target="_blank" rel="noreferrer" className="text-text underline">{label}</a>
+            </span>
+          ))}
+        </p>
         <SaveBar saving={saving} />
       </form>
     </div>

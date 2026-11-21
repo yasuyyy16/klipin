@@ -14,7 +14,7 @@ from sqlalchemy import Engine, text
 
 from klipin.config import get_config
 from klipin.db.models import utcnow
-from klipin.media import chat_replay, ytdlp
+from klipin.media import chat_replay, probe, ytdlp
 from klipin.media import fake as fake_media
 from klipin.worker.context import JobContext
 from klipin.worker.handlers import register
@@ -93,12 +93,18 @@ def _video(ctx: JobContext, url: str, dest: Path,
         if "No space left" in e.detail or "Errno 28" in e.detail:
             raise RuntimeError(MSG_DISK_FULL) from e
         raise
+    try:  # durasi file sebenarnya (metadata situs bisa berbeda); dipakai FR-005 & FR-022
+        duration = probe.duration_ms(result.path)
+    except (ValueError, RuntimeError, OSError) as e:
+        ctx.log(f"durasi video tidak terbaca, memakai metadata: {e}")
+        duration = None
     with ctx.engine.begin() as conn:
         conn.execute(text(
             "UPDATE source_streams SET video_path = :p, video_width = :w, video_height = :h, "
-            "video_fps = :f, updated_at = :now WHERE id = :s"),
+            "video_fps = :f, duration_ms = COALESCE(:d, duration_ms), updated_at = :now "
+            "WHERE id = :s"),
             {"p": str(result.path), "w": result.width, "h": result.height, "f": result.fps,
-             "now": utcnow(), "s": ctx.source_stream_id})
+             "d": duration, "now": utcnow(), "s": ctx.source_stream_id})
     ctx.save_checkpoint({**ctx.checkpoint, "video_done": True, "video_path": str(result.path)})
 
 

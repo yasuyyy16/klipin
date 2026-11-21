@@ -12,7 +12,8 @@ export interface Settings {
   live_block_minutes: number;
   live_last_n_default_s: number;
   max_heavy_jobs: number;
-  confirm_usage_over_min: number;
+  /** null = konfirmasi pemakaian mati; 0 = selalu (FR-022). */
+  confirm_usage_over_min: number | null;
   max_audio_minutes_per_job: number;
   transcriber_provider: "deepgram" | "assemblyai";
   llm_provider: "anthropic";
@@ -23,6 +24,7 @@ export interface Settings {
   download_max_height: number;
   secrets: Record<SecretName, { set: boolean; masked: string | null }>;
   storage: { keyring_available: boolean };
+  pricing_links: Record<string, string>;
 }
 
 export interface SecretTest {

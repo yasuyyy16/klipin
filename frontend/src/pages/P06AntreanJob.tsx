@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../api/client";
 import {
-  cancelJob, confirmJob, retryJob, useJobDetail, useJobs, JOB_TYPE_LABEL,
+  cancelJob, retryJob, useJobDetail, useJobs, JOB_TYPE_LABEL,
   type Job, type JobStatus,
 } from "../api/jobs";
 import { Button } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { Modal } from "../components/Modal";
+import { UsageConfirmDialog } from "../components/UsageConfirmDialog";
 import { useToast } from "../components/Toast";
 
 const FILTERS = [
@@ -286,28 +286,7 @@ export default function P06AntreanJob() {
         }}
       />
 
-      <Modal open={toConfirm !== null} onClose={() => setToConfirm(null)} title="Konfirmasi pemakaian API">
-        <p className="text-muted">
-          Transkripsi untuk "{toConfirm?.stream_title ?? "stream ini"}" menunggu persetujuanmu sebelum
-          audio dikirim ke API transkripsi.
-        </p>
-        <p className="mt-3 text-muted">
-          Perkiraan durasi audio dan jumlah jendela yang dinilai AI belum tersedia di versi ini.
-        </p>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button onClick={() => setToConfirm(null)}>Tahan dulu</Button>
-          <Button
-            variant="primary"
-            disabled={busyId !== null}
-            onClick={async () => {
-              if (toConfirm) await run(toConfirm, () => confirmJob(toConfirm.id, true), "Transkripsi dilanjutkan.");
-              setToConfirm(null);
-            }}
-          >
-            Lanjutkan
-          </Button>
-        </div>
-      </Modal>
+      <UsageConfirmDialog job={toConfirm} onClose={() => setToConfirm(null)} />
     </section>
   );
 }
