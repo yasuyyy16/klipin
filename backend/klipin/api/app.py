@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from klipin.api.errors import ApiError, install_error_handlers
 from klipin.api.routes import events as events_routes
 from klipin.api.routes import jobs as jobs_routes
+from klipin.api.routes import layouts as layouts_routes
+from klipin.api.routes import media as media_routes
 from klipin.api.routes import secrets as secrets_routes
 from klipin.api.routes import settings as settings_routes
 from klipin.api.routes import streams as streams_routes
@@ -32,7 +34,7 @@ def create_app(token: str | None = None, dist_dir: Path = DIST_DIR,
     # Router API wajib dipasang sebelum mount SPA di "/" yang menangkap semua path.
     for router in (settings_routes.router, secrets_routes.router, jobs_routes.router,
                    events_routes.router, system_routes.router, streams_routes.router,
-                   *routers):
+                   layouts_routes.router, media_routes.router, *routers):
         app.include_router(router)
 
     @app.get("/", include_in_schema=False)

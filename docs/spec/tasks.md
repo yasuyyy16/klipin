@@ -84,7 +84,7 @@
   - Selesai jika: TC-018 lulus; snapshot frame untuk tiap preset statis sesuai.
 - [x] **T-033** Jalur crop dinamis `irl` (ikuti wajah, maks. pan 5%/detik) dan `podcast` (pembicara aktif dari diarization + wajah, tahan ≥ 1,5 detik) dengan sampling 5 fps di rentang Klip. _(FR-007, ADR-004)_
   - Selesai jika: TC-019 lulus; IRL tidak bergoyang (simpangan antar-detik ≤ 5% lebar).
-- [ ] **T-034** Endpoint `GET /streams/{id}/regions`, `PUT /clips/{id}/regions` (override, simpan default Kanal, terapkan ke klip lain), `GET /channels`, `POST /channels`, `PATCH /streams/{id}/channel`, `GET /layout-presets`, `GET /media/streams/{id}/frame`. _(FR-006, FR-008)_
+- [x] **T-034** Endpoint `GET /streams/{id}/regions`, `PUT /clips/{id}/regions` (override, simpan default Kanal, terapkan ke klip lain), `GET /channels`, `POST /channels`, `PATCH /streams/{id}/channel`, `GET /layout-presets`, `GET /media/streams/{id}/frame`. _(FR-006, FR-008)_
   - Selesai jika: TC-017 lulus lewat API; stream tanpa Kanal → 409 "Pilih Kanal dulu".
 
 ### US-008 Deteksi Kandidat Klip
