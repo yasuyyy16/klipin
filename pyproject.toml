@@ -37,6 +37,7 @@ target-version = "py311"
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.170.17",
     "pytest>=9.2.0",
     "respx>=0.22.0",
     "ruff>=0.17.6",

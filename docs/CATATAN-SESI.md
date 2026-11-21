@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-036.
+Terakhir diperbarui: 2026-11-21, setelah T-037.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-036 selesai; task berikutnya: **T-037** (`highlight_windows` + pra-seleksi BR-003).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-037 selesai; task berikutnya: **T-038** (`HighlightJudge` + FakeJudge + adapter Anthropic).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (358 tes setelah T-036); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (366 tes setelah T-037); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -51,6 +51,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 29 | Bentuk respons yang tidak dirinci di 06-api.md: `GET /layout-presets` → `{items:[{id,code,name,is_builtin,params}]}`; `GET /channels` → `{items:[{id,platform,external_id,name,default_layout_preset,default_regions,stream_count}],total}`; `POST /channels` hanya membuat Kanal `local` (nama 1–200, nama sama tanpa beda huruf → 409 + `existing_channel_id`); `PATCH /streams/{id}/channel` `{channel_id}` → `{stream}` (Kanal platform apa pun boleh); `GET /streams/{id}/regions` → `{stream_id, detected, suggested_layout_preset, regions, channel, message}` dengan `message` = teks FR-006 bila deteksi selesai, saran `center_crop`, tanpa region. `PUT /clips/{id}/regions`: replace per role; role harus milik preset (`gaming`/`custom`: cam, content; `split_two`/`podcast`: face_a, face_b; `irl`/`center_crop`: tidak ada) dan override gabungan harus lengkap (custom: 1–2 region); Klip `rendering` → 409; `rendered`/`render_failed` → `approved`; `apply_to_stream_clips` hanya Klip `candidate`/`approved` lain. Urutan tumpukan `custom` = urutan role (cam di atas) karena tabel tidak punya kolom urutan. `GET /media/streams/{id}/frame`: `w` 16–1280 (default 640), `t_ms` > durasi → 400, video belum ada → 409 `INVALID_STATE`, cache lewat `Cache-Control: private, max-age=60` | `layouts.py`, `api/routes/layouts.py`, `api/routes/media.py` | Menunggu, usul tambah ke 06-api.md |
 | 30 | Sinyal Audio: loudness = RMS dBFS per detik dari PCM mono 8 kHz (FFmpeg pipe, lantai −100 dB untuk hening digital; dipilih alih-alih `ebur128`/`astats` karena lebih sederhana & bisa dibatalkan). Satuan = simpangan baku loudness seluruh stream (min. 1 dB). Pemetaan kenaikan terhadap rata-rata 60 dtk sebelumnya: ≤ 1σ → 0, 2σ → 0,8, ≥ 2,25σ → 1 (tanpa ambang 1σ, fluktuasi wajar audio tenang sudah ±0,4 sehingga melanggar "jendela tenang < 0,3"). Sinyal jendela = maksimum per detik. Video tanpa audio → array kosong (sinyal 0) | `highlight/audio_signal.py` | Menunggu; kalibrasi di T-062 |
 | 31 | Sinyal Chat: ember 10 dtk setelah digeser mundur `chat_delay_ms` (offset < 0 diabaikan); bobot reaksi 1,5× dihitung ulang dari teks dengan `chat_reaction_words` saat skor (kolom `is_reaction` hanya hasil impor); rasio terhadap median ember ±150 dtk dengan lantai 1 pesan; sinyal = (rasio − 1)/4 dibatasi 0–1 (5× median = 1); sinyal jendela = ember tertinggi yang beririsan. BR-002 (`highlight/scoring.py`): tanpa chat → `w_chat` dibagi proporsional ke audio & LLM; LLM null → bobot audio+chat dinormalkan ulang dan `partial = true`; skor dibulatkan ke integer 0–100. Pembaca Pengaturan lewat Connection: `app_settings.value` | `highlight/chat_signal.py`, `highlight/scoring.py` | Menunggu; kalibrasi di T-062 |
+| 32 | Pra-seleksi BR-003 (`highlight/preselect.py`): jendela terakhir dipotong di akhir rentang, jendela < 15 dtk tidak dibuat (kecuali stream sangat pendek: 1 jendela); tanpa chat skor pra-seleksi = Audio saja; persentil 80 inklusif (nilai sama → ikut); sampel acak 5% = ceil(5% × sisa) dengan seed id Stream Sumber (hasil sama saat rescore); batas = ceil(jam × 120), yang dipertahankan: skor tertinggi lalu sampel acak; `store` menghapus jendela di luar set baru dan tidak menimpa kolom `llm_*`. `build_windows(start, end, …)` menerima rentang transkripsi (pemanggilnya T-039). Dependensi dev baru: `hypothesis` | `highlight/preselect.py` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 

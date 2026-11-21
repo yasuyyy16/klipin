@@ -92,7 +92,7 @@
   - Selesai jika: TC-020 lulus.
 - [x] **T-036** [P] Sinyal Chat (per 10 detik, bobot kata reaksi 1,5×, normalisasi median 5 menit, geser Jeda Chat) + pembagian bobot saat chat tidak ada. _(FR-010, BR-002)_
   - Selesai jika: TC-021, TC-022 lulus.
-- [ ] **T-037** `highlight_windows` (60 detik geser 30) + pra-seleksi BR-003. _(FR-011, BR-003)_
+- [x] **T-037** `highlight_windows` (60 detik geser 30) + pra-seleksi BR-003. _(FR-011, BR-003)_
   - Selesai jika: unit test persentil & batas 120 jendela/jam.
 - [ ] **T-038** Antarmuka `HighlightJudge` + `FakeJudge` + adapter Anthropic (structured output, validasi Pydantic, retry, paralel 4, `max_tokens` 300, model dari `settings.llm_models`). _(FR-011, INT-05)_
   - Selesai jika: TC-023, TC-024 lulus; tes kontrak adapter lulus.
