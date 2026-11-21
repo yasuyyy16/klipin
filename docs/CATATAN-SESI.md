@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-034.
+Terakhir diperbarui: 2026-11-21, setelah T-035.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-034 selesai (US-006/007 layout backend); task berikutnya: **T-035** (Sinyal Audio).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-035 selesai; task berikutnya: **T-036** (Sinyal Chat + BR-002).
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (345 tes setelah T-034); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (352 tes setelah T-035); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -49,6 +49,7 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 27 | Filtergraph preset statis (`media/ffmpeg.py`): tiap panel *cover* (region dipotong di tengahnya ke rasio panel lalu di-scale tepat, tanpa `pad`), panel ditumpuk `vstack`; offset & ukuran crop selalu genap (offset ganjil menggeser chroma yuv420p). `split_two` memakai `split_pct` (seed 50). `custom`: urutan tumpukan = urutan region yang diberikan, 1 region → penuh, 2 region → `top_pct` (default 50, belum ada di seed); penyimpanan urutan menyusul di T-034/T-042. Region wajib tidak ada → jatuh ke `center_crop` dengan alasan (`LayoutPlan.fallback_reason`) | `media/ffmpeg.py` | Menunggu |
 | 28 | Jalur crop dinamis (`layout/crop_path.py`): jendela 9:16 setinggi frame; posisi per sampel 5 fps (dibaca berurutan dengan `grab`), diinterpolasi per frame 30 fps dan dikirim ke `crop` lewat `sendcmd` (1 perintah per frame). `irl`: median 1 dtk lalu batas kecepatan `max_pan_pct_per_s`; tanpa wajah → tahan posisi terakhir (awal: tengah). `podcast`: potongan langsung ke wajah pembicara aktif, tidak lebih sering dari `switch_hold_ms`; tanpa giliran bicara → tahan. Pemetaan pembicara → wajah memakai urutan (pembicara pertama ↔ wajah paling kiri) kecuali `speaker_faces` diberikan — belum ada pencocokan gerak bibir; keterbatasan ini perlu dicek di evaluasi T-062. Muat giliran bicara dari `transcript_segments` dikerjakan di T-046 | `layout/crop_path.py` | Menunggu |
 | 29 | Bentuk respons yang tidak dirinci di 06-api.md: `GET /layout-presets` → `{items:[{id,code,name,is_builtin,params}]}`; `GET /channels` → `{items:[{id,platform,external_id,name,default_layout_preset,default_regions,stream_count}],total}`; `POST /channels` hanya membuat Kanal `local` (nama 1–200, nama sama tanpa beda huruf → 409 + `existing_channel_id`); `PATCH /streams/{id}/channel` `{channel_id}` → `{stream}` (Kanal platform apa pun boleh); `GET /streams/{id}/regions` → `{stream_id, detected, suggested_layout_preset, regions, channel, message}` dengan `message` = teks FR-006 bila deteksi selesai, saran `center_crop`, tanpa region. `PUT /clips/{id}/regions`: replace per role; role harus milik preset (`gaming`/`custom`: cam, content; `split_two`/`podcast`: face_a, face_b; `irl`/`center_crop`: tidak ada) dan override gabungan harus lengkap (custom: 1–2 region); Klip `rendering` → 409; `rendered`/`render_failed` → `approved`; `apply_to_stream_clips` hanya Klip `candidate`/`approved` lain. Urutan tumpukan `custom` = urutan role (cam di atas) karena tabel tidak punya kolom urutan. `GET /media/streams/{id}/frame`: `w` 16–1280 (default 640), `t_ms` > durasi → 400, video belum ada → 409 `INVALID_STATE`, cache lewat `Cache-Control: private, max-age=60` | `layouts.py`, `api/routes/layouts.py`, `api/routes/media.py` | Menunggu, usul tambah ke 06-api.md |
+| 30 | Sinyal Audio: loudness = RMS dBFS per detik dari PCM mono 8 kHz (FFmpeg pipe, lantai −100 dB untuk hening digital; dipilih alih-alih `ebur128`/`astats` karena lebih sederhana & bisa dibatalkan). Satuan = simpangan baku loudness seluruh stream (min. 1 dB). Pemetaan kenaikan terhadap rata-rata 60 dtk sebelumnya: ≤ 1σ → 0, 2σ → 0,8, ≥ 2,25σ → 1 (tanpa ambang 1σ, fluktuasi wajar audio tenang sudah ±0,4 sehingga melanggar "jendela tenang < 0,3"). Sinyal jendela = maksimum per detik. Video tanpa audio → array kosong (sinyal 0) | `highlight/audio_signal.py` | Menunggu; kalibrasi di T-062 |
 
 ## Sengaja ditunda ke task tertentu
 
