@@ -49,8 +49,8 @@ class FakeYDL:
 
 @pytest.fixture
 def ydl(monkeypatch):
-    real = ytdlp.inspect
-    monkeypatch.setattr(ytdlp, "inspect", lambda url: real(url, ydl_cls=FakeYDL))
+    monkeypatch.setattr(streams, "inspector",
+                        lambda: lambda url: ytdlp.inspect(url, ydl_cls=FakeYDL))
     monkeypatch.setattr(streams, "disk_free_bytes", lambda path: 500 * GB)
     FakeYDL.info, FakeYDL.error, FakeYDL.calls = saved("youtube_vod_chat.json"), None, 0
     return FakeYDL
@@ -107,7 +107,7 @@ def test_inspect_timeout_is_502(api, ydl, monkeypatch):
     import threading
     release = threading.Event()
     monkeypatch.setattr(streams, "INSPECT_TIMEOUT_S", 0.2)
-    monkeypatch.setattr(ytdlp, "inspect", lambda url: release.wait(5))
+    monkeypatch.setattr(streams, "inspector", lambda: lambda url: release.wait(5))
     try:
         r = api.post("/api/v1/streams/inspect", json={"url": VOD_URL})
     finally:

@@ -28,7 +28,8 @@ def db(engine, home, monkeypatch):
     return engine
 
 
-def add_job(engine, job_type="download", **cols):
+def add_job(engine, job_type="detect_layout", **cols):
+    # Jenis Job tanpa handler asli -> handler palsu (download sudah punya handler asli, T-023).
     cols = {"job_type": job_type, "source_stream_id": 1, **cols}
     names = ", ".join(cols)
     marks = ", ".join(f":{k}" for k in cols)

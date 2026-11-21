@@ -105,3 +105,11 @@ def log_text(home_path) -> str:
         h.flush()
     path = home_path / "logs" / "klipin.log"
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+@pytest.fixture(autouse=True)
+def _fast_fake_media(monkeypatch):
+    """Unduhan palsu mode fake tanpa jeda (di UI sengaja ±2 detik agar progres terlihat)."""
+    from klipin.media import fake as fake_media
+
+    monkeypatch.setattr(fake_media, "STEP_S", 0.0)

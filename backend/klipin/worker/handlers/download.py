@@ -15,9 +15,9 @@ from sqlalchemy import Engine, text
 from klipin.config import get_config
 from klipin.db.models import utcnow
 from klipin.media import chat_replay, ytdlp
+from klipin.media import fake as fake_media
 from klipin.worker.context import JobContext
 from klipin.worker.handlers import register
-from klipin.worker.handlers.fake import fake_handler
 from klipin.worker.process import JobCancelled
 
 log = structlog.get_logger(__name__)
@@ -140,9 +140,7 @@ def run(ctx: JobContext, *,
 
 @register("download")
 def handle(ctx: JobContext) -> None:
-    if get_config().klipin_providers == "fake":
-        # shortcut: mode fake belum punya sumber media palsu (lihat CATATAN-SESI, T-024/T-057);
-        # unduhan disimulasikan agar pipeline & UI bisa diuji tanpa jaringan.
-        fake_handler(ctx)
+    if get_config().klipin_providers == "fake":  # fixture lokal, tanpa jaringan
+        run(ctx, download=fake_media.download_vod, fetch_chat=fake_media.download_live_chat)
         return
     run(ctx)

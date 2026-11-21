@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-023.
+Terakhir diperbarui: 2026-11-21, setelah T-024.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-023 selesai; task berikutnya: **T-024** (frontend, butuh `pnpm`).
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021–T-024 selesai; task berikutnya: **T-025**.
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (235 tes setelah T-023); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (243 tes setelah T-024); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -37,6 +37,8 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 15 | Kata reaksi (FR-010): kata alfanumerik cocok sebagai kata utuh tanpa beda huruf besar/kecil (`lol` cocok di "lol bang", tidak di "lolos"; `wkwk` tidak cocok "wkwkwkwk"); emoji/simbol cocok sebagai potongan teks. Dihitung saat impor | `media/chat_replay.py` (`reaction_matcher`) | Menunggu |
 | 16 | Jenis Pesan Chat: `liveChatTextMessageRenderer` → `text`; Paid Message/Sticker → `donation`; Membership + hadiah membership → `membership`; pesan sistem YouTube & ticker diabaikan (tidak disimpan). Chat tidak ada / gagal / VOD Kick → Pesan Chat lama dihapus dan `has_chat = 0` | `media/chat_replay.py`, `worker/handlers/download.py` | Menunggu |
 | 17 | Job `download`: video 0–90%, chat 90–99%; checkpoint `video_done` + `video_path` (coba ulang tidak mengunduh ulang video utuh); chat replay diunduh terpisah setelah video agar kegagalannya tidak menggagalkan video; `video_width/height/fps` dari metadata yt-dlp (bisa kosong). Disk penuh → "Ruang disk habis. Kosongkan ruang lalu coba lagi." | `worker/handlers/download.py` | Menunggu |
+| 18 | Mode `fake` memakai media fixture (`media/fake.py`), tanpa jaringan: semua URL YouTube/Kick sah dijawab dari `tests/fixtures/ytdlp/*.json` (ID dari URL, URL berisi "live" = live, durasi 30 dtk); Job `download` menyalin `gaming_facecam_30s.mp4` + `live_chat_spike.jsonl` ke `streams/{id}/` (±2 dtk progres simulasi) | `media/fake.py`, `streams.inspector`, `handlers/download.py` | Disetujui pemilik (2026-11-21) |
+| 19 | P-01: tanpa thumbnail (inspect tidak mengembalikan frame); badge hanya "Kanal dikenal" (nama preset default menunggu `GET /channels`, T-034); tombol "Mulai Rekam Live" & "Pilih file dari komputer" belum ditampilkan (tanpa kontrol palsu) — URL live memberi teks penjelasan; banner izin yang ditutup diingat di `localStorage`. P-04 sementara berisi header stream + progres pipeline (`components/PipelineProgress.tsx`) sampai T-041 | `frontend/src/pages/P01Beranda.tsx`, `P04ReviewKlip.tsx` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
@@ -49,8 +51,9 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | `cancel` pada `record_live` = `stop` (gabung segmen) ; event `live.position` | T-051 |
 | Tab P-07 Akun Unggah, Caption, Gaya Subtitle (sengaja belum ditampilkan) | v1.1, T-050, T-045 |
 | Analisis live per blok (scope transcribe/score) | v1.1 (FR-013) |
-| `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini." | T-051 |
-| Sumber media palsu untuk `KLIPIN_PROVIDERS=fake`: inspect masih memanggil yt-dlp sungguhan (gratis), sedangkan Job `download` disimulasikan (handler palsu, tanpa file video). Tes memalsukan `YoutubeDL` / menyuntik fungsi unduh. Perlu diputuskan sebelum uji UI/E2E tanpa jaringan dan sebelum handler hilir (T-031 dst.) butuh file video di mode fake | T-024, T-031, T-057 |
+| `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini."; tombol Rekam Live & checkbox "Analisis selama live" di P-01 | T-051, T-053 |
+| Tombol "Pilih file dari komputer" di P-01 | T-054 |
+| Badge "Kanal dikenal: preset X tersimpan" | T-034 |
 
 ## Cara kerja yang sudah berjalan
 
@@ -80,6 +83,9 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 - Di perangkat dengan repo di `D:\Projects\klipin`, awalnya tidak ada `uv`/`pnpm` di PATH: `uv` dipasang lewat
   `python -m pip install --user uv` (biner di `%APPDATA%\Python\Python312\Scripts`). FFmpeg ada di
   `D:\App klip\ffmpeg-8.1.1-essentials_build\bin`.
+- `pnpm` tidak ada di PATH: jalankan lewat `corepack pnpm …` (versi dipin `packageManager`).
+  Uji UI manual: `.claude/launch.json` (tidak di-commit) menjalankan `uv run klipin start` dengan
+  `KLIPIN_PROVIDERS=fake` dan `KLIPIN_HOME` di folder sementara.
 - `netstat` tidak menampilkan socket proses dari sandbox agent; verifikasi bind lewat akses IP LAN.
 
 ## Pertanyaan terbuka untuk pemilik proyek

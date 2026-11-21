@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from klipin.api.errors import ApiError
 from klipin.config import get_config
 from klipin.db.models import Channel, Clip, Job, LayoutPreset, SourceStream
+from klipin.media import fake as fake_media
 from klipin.media import ytdlp
 from klipin.worker import pipeline
 
@@ -36,11 +37,16 @@ def disk_free_bytes(path: Path) -> int:
     return shutil.disk_usage(path).free
 
 
+def inspector():
+    """yt-dlp asli, atau fixture saat `KLIPIN_PROVIDERS=fake` (tanpa jaringan)."""
+    return fake_media.inspect if get_config().klipin_providers == "fake" else ytdlp.inspect
+
+
 def run_inspect(url: str) -> ytdlp.InspectResult:
     """`ytdlp.inspect` dengan batas waktu & antrean satu-satu; error → `ApiError`."""
     try:
         ytdlp.platform_of(url)
-        return _inspect_pool.submit(ytdlp.inspect, url).result(timeout=INSPECT_TIMEOUT_S)
+        return _inspect_pool.submit(inspector(), url).result(timeout=INSPECT_TIMEOUT_S)
     except ytdlp.UrlNotSupportedError as e:
         raise ApiError(400, "URL_NOT_SUPPORTED", str(e)) from e
     except ytdlp.YtdlpError as e:

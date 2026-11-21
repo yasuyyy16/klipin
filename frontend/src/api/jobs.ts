@@ -9,6 +9,7 @@ export interface Job {
   status: JobStatus;
   source_stream_id: number | null;
   clip_id: number | null;
+  scope_start_ms: number | null;
   awaiting_confirmation: boolean;
   progress_pct: number;
   stage: string | null;
