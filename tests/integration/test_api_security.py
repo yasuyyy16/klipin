@@ -29,8 +29,8 @@ def client(tmp_path):
     (dist / "app.js").write_text("console.log(1)")
     router = APIRouter(prefix="/api/v1")
 
-    @router.post("/streams")
-    def streams() -> dict:
+    @router.post("/probe")  # path tiruan; jangan bentrok dengan route asli
+    def probe() -> dict:
         return {"ok": True}
 
     @router.get("/events")
@@ -68,21 +68,21 @@ def assert_forbidden(resp):
 
 
 def test_tc070_post_without_token_forbidden(client):
-    assert_forbidden(client.post("/api/v1/streams", headers={
+    assert_forbidden(client.post("/api/v1/probe", headers={
         **HOST, "Origin": "https://evil.example"}))
 
 
 def test_tc070_preflight_gets_no_cors(client):
-    assert_forbidden(client.options("/api/v1/streams", headers={
+    assert_forbidden(client.options("/api/v1/probe", headers={
         **HOST, "Origin": "https://evil.example", "Access-Control-Request-Method": "POST"}))
 
 
 def test_wrong_token_forbidden(client):
-    assert_forbidden(client.post("/api/v1/streams", headers={**HOST, "X-Klipin-Token": "salah"}))
+    assert_forbidden(client.post("/api/v1/probe", headers={**HOST, "X-Klipin-Token": "salah"}))
 
 
 def test_valid_token_passes_without_cors_headers(client):
-    resp = client.post("/api/v1/streams", headers=AUTH)
+    resp = client.post("/api/v1/probe", headers=AUTH)
     assert resp.status_code == 200
     assert "access-control-allow-origin" not in resp.headers
 
@@ -90,13 +90,13 @@ def test_valid_token_passes_without_cors_headers(client):
 @pytest.mark.parametrize("host", ["evil.example:8765", "127.0.0.1:9999", "192.168.1.5:8765", ""])
 def test_tc071_foreign_host_forbidden_everywhere(client, host):
     headers = {"Host": host, "X-Klipin-Token": TOKEN}
-    assert_forbidden(client.post("/api/v1/streams", headers=headers))
+    assert_forbidden(client.post("/api/v1/probe", headers=headers))
     assert_forbidden(client.get("/", headers=headers))  # index.html berisi token
 
 
 @pytest.mark.parametrize("host", ["127.0.0.1:8765", "localhost:8765", "LOCALHOST:8765"])
 def test_loopback_hosts_allowed(client, host):
-    assert client.post("/api/v1/streams", headers={"Host": host, "X-Klipin-Token": TOKEN}
+    assert client.post("/api/v1/probe", headers={"Host": host, "X-Klipin-Token": TOKEN}
                        ).status_code == 200
 
 

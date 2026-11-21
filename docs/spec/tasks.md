@@ -56,7 +56,7 @@
 ### US-001 Impor VOD dari URL
 - [x] **T-021** Modul `media/ytdlp.py`: `inspect(url)` (metadata, live status, chat replay, perkiraan ukuran) dan unduh VOD ≤ 1080p ke MP4 dengan progres & lanjutan. _(FR-001, INT-01)_
   - Selesai jika: unit test dengan respons yt-dlp tersimpan; unduhan fixture lokal berhasil dan bisa dilanjutkan.
-- [ ] **T-022** Endpoint `POST /streams/inspect`, `POST /streams` (mode `vod`), `GET /streams`, `GET /streams/{id}`; cek disk; deteksi duplikat; buat/temukan Kanal. _(FR-001)_
+- [x] **T-022** Endpoint `POST /streams/inspect`, `POST /streams` (mode `vod`), `GET /streams`, `GET /streams/{id}`; cek disk; deteksi duplikat; buat/temukan Kanal. _(FR-001)_
   - Selesai jika: TC-001–TC-004 lulus.
 - [ ] **T-023** Handler Job `download` + unduh chat replay YouTube (INT-02) ke `chat_messages` (tandai `is_reaction`, `has_chat`). _(FR-001, FR-010)_
   - Selesai jika: fixture chat jsonl terimpor dengan `offset_ms` benar; chat gagal tidak menggagalkan Job.

@@ -4,14 +4,14 @@ Dibaca agent sebelum melanjutkan task di device mana pun. Riwayat percakapan dan
 tidak ikut ter-clone, jadi semua yang penting dicatat di sini. Spesifikasi di `docs/spec/`
 tetap sumber kebenaran; file ini hanya mencatat hal yang belum (atau tidak) masuk ke sana.
 
-Terakhir diperbarui: 2026-11-21, setelah T-021.
+Terakhir diperbarui: 2026-11-21, setelah T-022.
 
 ## Posisi kerja
 
 - Fase 0 (T-001–T-007) dan Fase 1 (T-008–T-020) selesai; Checkpoint 0 & 1 lulus.
-- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021 selesai; task berikutnya: **T-022**.
+- Fase 2 dimulai atas permintaan pemilik (2026-11-21). T-021, T-022 selesai; task berikutnya: **T-023**.
 - Satu commit per task, format `T-0xx: ringkasan`. CI GitHub Actions (ubuntu + windows) wajib hijau.
-- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (193 tes setelah T-021); frontend `pnpm lint && pnpm build`.
+- Tes: `KLIPIN_PROVIDERS=fake uv run pytest` (215 tes setelah T-022); frontend `pnpm lint && pnpm build`.
 
 ## Keputusan di luar spesifikasi
 
@@ -31,7 +31,9 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | 9 | Validasi PATCH /settings untuk kunci yang tidak punya aturan di 02-requirements.md §3: `score_min_threshold` 0–100, `live_last_n_default_s` 15–90, enum penyedia, `default_subtitle_style` harus ada di DB, kunci asing ditolak | `api/schemas/settings.py` | Menunggu |
 | 10 | Fixture audio "tenang" = hening digital (nada pelan membuat FLAC > 6 MB); fixture wajah dari 2 video domain publik Wikimedia Commons | `tests/fixtures/README.md` | Disetujui (sumber CC0/PD dipilih pemilik) |
 | 11 | `media/ytdlp.py`: URL disaring dulu per host (youtube.com, www/m/music.youtube.com, youtu.be, kick.com, www.kick.com) sebelum yt-dlp dipanggil, lalu hasilnya wajib `extractor_key` `Youtube`/`Kick`/`KickVOD` dan bukan playlist; selain itu `URL_NOT_SUPPORTED`. Hasil unduhan selalu di-remux ke MP4 (`FFmpegVideoRemuxer`) bila format tunggal bukan MP4 | `backend/klipin/media/ytdlp.py` | Menunggu |
-| 12 | `estimated_size_bytes` = jumlah `filesize`/`filesize_approx` format terpilih (fallback `tbr` × durasi); `null` bila ada yang tak diketahui (mis. live). T-022 perlu memutuskan cek disk saat ukuran `null` | `media/ytdlp.py` (`_estimate_size`) | Menunggu, putuskan di T-022 |
+| 12 | `estimated_size_bytes` = jumlah `filesize`/`filesize_approx` format terpilih (fallback `tbr` × durasi); `null` bila ada yang tak diketahui. Saat `null`, cek disk FR-001 **dilewati** (impor tetap jalan; disk penuh saat unduh ditangani Job) | `media/ytdlp.py`, `streams.py` (`check_disk`) | Menunggu |
+| 13 | Bentuk respons `GET /streams` (tidak dirinci di 06-api.md): item = `id, title, platform, source_type, status, duration_ms, error_message, created_at, channel_id, channel{id,name}, storage, clip_counts`; `clip_counts` memuat keenam status Klip. Detail menambah `source_url`, `detected_language`, `has_chat`, `suggested_layout_preset`, `active_jobs` (+ `stage`, `awaiting_confirmation`). `POST /streams` 201 memakai item yang sama untuk `stream` | `api/schemas/streams.py` | Menunggu, usul tambah ke 06-api.md |
+| 14 | Nilai `fields` error dikirim sebagai string (`required_bytes`, `free_bytes`, `existing_stream_id`), mengikuti tipe `fields` yang ada. Pesan duplikat: "Video ini sudah pernah diimpor." (tidak ada di 08-ui-ux §7). Timeout inspect 10 dtk → 502 `UPSTREAM_ERROR` "yt-dlp tidak menjawab dalam 10 detik. Coba lagi." | `streams.py` | Menunggu |
 
 ## Sengaja ditunda ke task tertentu
 
@@ -44,6 +46,8 @@ disetujui pindahkan ke dokumen spesifikasi terkait (naikkan versi + baris Riwaya
 | `cancel` pada `record_live` = `stop` (gabung segmen) ; event `live.position` | T-051 |
 | Tab P-07 Akun Unggah, Caption, Gaya Subtitle (sengaja belum ditampilkan) | v1.1, T-050, T-045 |
 | Analisis live per blok (scope transcribe/score) | v1.1 (FR-013) |
+| `POST /streams` mode `live` sementara ditolak 400 "Rekam live belum tersedia di versi ini." | T-051 |
+| Inspect palsu untuk `KLIPIN_PROVIDERS=fake`: belum ada, sehingga mode fake tetap memanggil yt-dlp sungguhan (gratis). Tes API memalsukan `YoutubeDL`. Perlu diputuskan untuk uji UI/E2E tanpa jaringan | T-024, T-057 |
 
 ## Cara kerja yang sudah berjalan
 
