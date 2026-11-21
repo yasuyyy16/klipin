@@ -51,5 +51,9 @@ def get_transcriber(engine: Engine) -> Transcriber:
     if get_config().klipin_providers == "fake":
         return FakeTranscriber(api_key=key)
     name = provider_name(engine)
-    # shortcut: adapter Deepgram (T-028) dan AssemblyAI (T-029) belum ada.
+    if name == "deepgram":
+        from klipin.providers.transcriber.deepgram import DeepgramTranscriber
+
+        return DeepgramTranscriber(key)
+    # shortcut: adapter AssemblyAI dibuat di T-029.
     raise TranscriberError(f"Penyedia transkripsi {name} belum tersedia di versi ini.")

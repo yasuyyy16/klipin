@@ -1,5 +1,5 @@
 # Integrasi Pihak Ketiga: Klipin
-> Versi 2.0 · 2026-11-20 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
+> Versi 2.1 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
 
 Fakta tentang layanan pihak ketiga di dokumen ini dicek pada 2026-11-20 dan **bisa berubah**. Harga tidak ditulis; cek di situs penyedia. Setiap integrasi dibungkus adapter (ADR-003) agar mudah diganti.
 
@@ -69,13 +69,13 @@ Pilihan final ditentukan dengan uji A/B pada 3 sampel stream (Indo gaming, Indo 
 - **Alur (Deepgram):**
   1. FFmpeg: ekstrak audio mono 16 kHz, Opus/FLAC, lalu potong per **10 menit** dengan tumpang tindih 2 detik → `transcription_chunks`.
   2. **Deteksi bahasa:** chunk pertama yang tidak hening dikirim dengan opsi deteksi bahasa penyedia. Hasilnya (`id`/`en`/lainnya) disimpan ke `source_streams.detected_language` dan dipakai sebagai `language` eksplisit untuk chunk berikutnya agar konsisten. Jika bukan `id`/`en` → tetap diproses dengan bahasa itu; terjemahan hanya ke `id` (FR-016).
-  3. Per chunk: `POST https://api.deepgram.com/v1/listen?model=nova-3&language={lang}&diarize=true&punctuate=true&smart_format=true&utterances=true` dengan body audio.
+  3. Per chunk: `POST https://api.deepgram.com/v1/listen?model=nova-3&language={lang}&diarize_model=latest&punctuate=true&smart_format=true&utterances=true` dengan body audio FLAC (`Content-Type: audio/flac`). Chunk pertama memakai `detect_language=true` sebagai ganti `language`; hasilnya dibaca dari `results.channels[0].detected_language`. Parameter `diarize` sudah deprecated di dokumentasi Deepgram (dicek 2026-11-21) dan tidak boleh dikirim bersama `diarize_model`.
   4. Normalisasi respons → kata (`word`/`punctuated_word`, `start`, `end`, `confidence`, `speaker`) dan utterance → `transcript_segments` + `transcript_words`. Waktu ditambah `chunk.start_ms`.
   5. **Penjahitan tumpang tindih:** kata di 2 detik tumpang tindih diambil dari chunk berikutnya jika `start_ms ≥ chunk_boundary`, dari chunk sebelumnya jika tidak (hindari kata ganda).
   6. **Label pembicara:** diarization per chunk menghasilkan label lokal. Label dinormalkan ke `S1`, `S2`, … per Stream Sumber dengan mencocokkan pembicara di zona tumpang tindih. Jika tidak cocok, label dibiarkan per chunk dan preset `podcast` mengandalkan deteksi wajah aktif (keterbatasan dicatat).
 - **Data yang dikirim:** audio Stream Sumber (konten pihak ketiga). Tidak ada data pribadi Pengguna.
 - **Kredensial:** `TRANSCRIBER_API_KEY` (keyring `klipin/transcriber_api_key`). Header `Authorization: Token {key}` (Deepgram) / `Authorization: {key}` (AssemblyAI).
-- **Kegagalan & retry:** timeout 120 detik per chunk; 429/5xx/timeout → coba ulang 3× (backoff 2/4/8 detik + jitter). 400 (audio rusak) → chunk ditandai `failed`, Job `failed`. 401/403 → Job `failed` segera dengan pesan API key.
+- **Kegagalan & retry:** timeout 120 detik per chunk; 429/5xx/timeout → coba ulang 3× (backoff 2/4/8 detik + jitter). 400 (audio rusak) → chunk ditandai `failed`, Job `failed`. 401/403 → Job `failed` segera dengan pesan API key. Deepgram: body error `{err_code, err_msg, request_id}` (mis. `INVALID_AUTH`, `TOO_MANY_REQUESTS`); 402 `ASR_PAYMENT_REQUIRED` (kredit habis) → Job `failed` tanpa retry; 408/422 diperlakukan sementara. Tes koneksi API key: `GET https://api.deepgram.com/v1/projects`.
 - **Idempotensi:** chunk `done` tidak dikirim ulang (checkpoint). Transkripsi ulang satu chunk menghapus segmennya dulu (CASCADE dari `transcription_chunks`).
 - **Biaya & kuota:** dihitung per durasi audio; cek harga terbaru di situs Deepgram/AssemblyAI. Klipin menampilkan durasi audio sebelum mengirim (FR-022). Diarization dan fitur tambahan bisa dikenai biaya terpisah; cek ketentuan penyedia.
 - **Fallback:** ganti penyedia di Pengaturan lalu "Coba lagi" (chunk yang sudah `done` dari penyedia lain tetap dipakai).
@@ -261,4 +261,5 @@ sequenceDiagram
 | Versi | Tanggal | Perubahan |
 |---|---|---|
 | 1.0 | 2026-11-20 | Draf awal |
+| 2.1 | 2026-11-21 | INT-04 Deepgram (T-028, keputusan pemilik): `diarize_model=latest` menggantikan `diarize=true` yang deprecated; `detect_language` untuk chunk pertama; format error, 402, dan endpoint tes koneksi dari dokumentasi resmi |
 | 2.0 | 2026-11-20 | Menyesuaikan unggah multi-platform & Mode Unggah (01-prd.md v1.1): pola umum `Publisher`; INT-06 OAuth per platform (Google, TikTok, Meta); INT-07 YouTube jadi Could; tambah INT-10 TikTok Direct Post, INT-11 Instagram Reels, INT-12 Facebook Page Reels, INT-13 Paket Unggah manual; tugas LLM `write_captions`; batasan audit & kuota tiap platform (dicek 2026-11-20) |

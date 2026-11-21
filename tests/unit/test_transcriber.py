@@ -53,13 +53,14 @@ def test_real_mode_reads_provider_from_settings(keyed, monkeypatch):
     get_config.cache_clear()
     # Pengaturan menang atas env (seed: deepgram)
     assert tr.provider_name(keyed) == "deepgram"
-    with pytest.raises(TranscriberError, match="deepgram belum tersedia"):
-        tr.get_transcriber(keyed)
+    assert tr.get_transcriber(keyed).name == "deepgram"
     # Pengaturan kosong → env
     with keyed.begin() as conn:
         conn.exec_driver_sql("UPDATE settings SET value = 'null' "
                              "WHERE key = 'transcriber_provider'")
     assert tr.provider_name(keyed) == "assemblyai"
+    with pytest.raises(TranscriberError, match="assemblyai belum tersedia"):
+        tr.get_transcriber(keyed)
 
 
 # --- FakeTranscriber ----------------------------------------------------------------------

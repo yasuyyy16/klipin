@@ -70,7 +70,7 @@
   - Selesai jika: pipeline bisa memakai penyedia palsu via `KLIPIN_PROVIDERS=fake`.
 - [x] **T-027** Handler `transcribe`: ekstrak audio 16 kHz, potong 10 menit + overlap 2 detik ke `transcription_chunks`, deteksi bahasa chunk pertama, kirim per chunk dengan retry 2/4/8 detik, jahit overlap, normalisasi pembicara `S1/S2`, simpan segmen & kata, checkpoint per chunk, dukung `scope_start_ms/scope_end_ms`. _(FR-005)_
   - Selesai jika: TC-011–TC-014 lulus dengan `FakeTranscriber`.
-- [ ] **T-028** Adapter Deepgram (INT-04) + tes kontrak (sukses, 401, 429, 5xx). _(FR-005)_
+- [x] **T-028** Adapter Deepgram (INT-04) + tes kontrak (sukses, 401, 429, 5xx). _(FR-005)_
   - Selesai jika: tes kontrak respx lulus; "Tes koneksi" berhasil dengan key asli (manual).
 - [ ] **T-029** [P] Adapter AssemblyAI (alur asinkron: unggah → transkrip → polling) + tes kontrak. _(FR-005)_
   - Selesai jika: tes kontrak lulus; bisa dipilih di Pengaturan.
