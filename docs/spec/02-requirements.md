@@ -1,5 +1,5 @@
 # Spesifikasi Kebutuhan: Klipin
-> Versi 1.2 · 2026-11-20 · Status: Draf · Dokumen terkait: 01-prd.md, 07-integrasi.md
+> Versi 1.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 07-integrasi.md
 
 ## 1. Kebutuhan Fungsional
 Semua FR dijalankan oleh peran **Pengguna** (satu-satunya peran). Istilah mengikuti Kamus Istilah di 01-prd.md.
@@ -338,6 +338,14 @@ Semua FR dijalankan oleh peran **Pengguna** (satu-satunya peran). Istilah mengik
 | F-14 Manajemen penyimpanan | — | FR-024 |
 | F-15 Pemantauan Job | US-015 | FR-023 |
 
+## Keputusan implementasi (disetujui pemilik 2026-11-21)
+Keputusan yang diambil saat implementasi karena spesifikasi belum merinci; nomor K-xx sama dengan riwayat di `docs/CATATAN-SESI.md`.
+
+- **K-30** (angka dikalibrasi ulang di T-062) Sinyal Audio: loudness = RMS dBFS per detik dari PCM mono 8 kHz (FFmpeg pipe, lantai −100 dB untuk hening digital; dipilih alih-alih `ebur128`/`astats` karena lebih sederhana & bisa dibatalkan). Satuan = simpangan baku loudness seluruh stream (min. 1 dB). Pemetaan kenaikan terhadap rata-rata 60 dtk sebelumnya: ≤ 1σ → 0, 2σ → 0,8, ≥ 2,25σ → 1 (tanpa ambang 1σ, fluktuasi wajar audio tenang sudah ±0,4 sehingga melanggar "jendela tenang < 0,3"). Sinyal jendela = maksimum per detik. Video tanpa audio → array kosong (sinyal 0) _(kode: `highlight/audio_signal.py`)_
+- **K-31** (angka dikalibrasi ulang di T-062) Sinyal Chat: ember 10 dtk setelah digeser mundur `chat_delay_ms` (offset < 0 diabaikan); bobot reaksi 1,5× dihitung ulang dari teks dengan `chat_reaction_words` saat skor (kolom `is_reaction` hanya hasil impor); rasio terhadap median ember ±150 dtk dengan lantai 1 pesan; sinyal = (rasio − 1)/4 dibatasi 0–1 (5× median = 1); sinyal jendela = ember tertinggi yang beririsan. BR-002 (`highlight/scoring.py`): tanpa chat → `w_chat` dibagi proporsional ke audio & LLM; LLM null → bobot audio+chat dinormalkan ulang dan `partial = true`; skor dibulatkan ke integer 0–100. Pembaca Pengaturan lewat Connection: `app_settings.value` _(kode: `highlight/chat_signal.py`, `highlight/scoring.py`)_
+- **K-32** Pra-seleksi BR-003 (`highlight/preselect.py`): jendela terakhir dipotong di akhir rentang, jendela < 15 dtk tidak dibuat (kecuali stream sangat pendek: 1 jendela); tanpa chat skor pra-seleksi = Audio saja; persentil 80 inklusif (nilai sama → ikut); sampel acak 5% = ceil(5% × sisa) dengan seed id Stream Sumber (hasil sama saat rescore); batas = ceil(jam × 120), yang dipertahankan: skor tertinggi lalu sampel acak; `store` menghapus jendela di luar set baru dan tidak menimpa kolom `llm_*`. `build_windows(start, end, …)` menerima rentang transkripsi (pemanggilnya T-039). Dependensi dev baru: `hypothesis` _(kode: `highlight/preselect.py`)_
+- **K-34** `score_highlights`: rentang jendela = `checkpoint.range` Job `transcribe` seluruh stream terakhir yang sukses (FR-022); bila `highlight_windows` sudah ada (rescore/coba ulang) sinyal & pra-seleksi tersimpan dipakai ulang tanpa dekode audio — perubahan Jeda Chat/kata reaksi baru berlaku pada stream yang dianalisis ulang dari awal. LLM hanya untuk jendela terpilih yang belum `done` (`invalid`/`failed` dicoba lagi saat rescore). Konteks transkrip = jendela ±15 dtk (≈ 90 dtk), waktu relatif awal jendela (bisa negatif). Koreksi BR-004: saran LLM dijepit ke jendela, < 15 dtk diperpanjang simetris lalu digeser masuk ke jendela, > 90 dtk dipendekkan di tengah. BR-005 juga menghindari Klip `auto` yang sudah direview (approved/rejected/rendering/rendered/render_failed); kuota BR-006 hanya untuk kandidat baru. Judul tanpa LLM: `"{Kanal atau judul stream} - mm:ss"` (h:mm:ss bila ≥ 1 jam); gaya subtitle = `default_subtitle_style`. Rescore: stream `ready` → `processing` → `ready`. `FakeJudge` menyarankan seluruh jendela _(kode: `highlight/candidates.py`, `worker/handlers/score_highlights.py`, `streams.rescore`)_
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] Bobot skor default (30/20/50), ambang skor 40, dan rumus jumlah kandidat (BR-006) adalah titik awal; dikalibrasi setelah uji dengan 3–5 stream nyata.
 - [ASUMSI] Jeda Chat default 8 detik; bisa berbeda antara YouTube dan Kick.
@@ -351,6 +359,7 @@ Semua FR dijalankan oleh peran **Pengguna** (satu-satunya peran). Istilah mengik
 ## Riwayat Perubahan
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.3 | 2026-11-21 | Keputusan implementasi disetujui pemilik (K-30, K-31, K-32, K-34): pemetaan Sinyal Audio/Chat ke 0–1, detail pra-seleksi BR-003, koreksi BR-004/BR-005 dan rescore |
 | 1.0 | 2026-11-20 | Draf awal |
 | 1.2 | 2026-11-20 | Hasil CEK #3: redirect OAuth diseragamkan ke `http://localhost:{port}`; BR-012 & NFR-005 mencakup loopback IPv6 (`::1`) karena `localhost` bisa resolve ke IPv6. Hasil CEK #11: pertanyaan yang sudah dijawab 07-integrasi.md ditandai terjawab |
 | 1.1 | 2026-11-20 | Menyesuaikan perubahan unggah multi-platform & Mode Unggah (01-prd.md v1.1): FR-019 & FR-020 jadi multi-platform; tambah FR-025 Paket Unggah manual, FR-026 Tandai sudah diposting, FR-027 draf caption per platform; BR-007 & BR-009 diperbarui, tambah BR-013 & BR-014; validasi caption/hashtag/URL; NFR-006; Matriks Penelusuran |

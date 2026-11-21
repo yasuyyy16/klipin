@@ -1,5 +1,5 @@
 # User Flow & State: Klipin
-> Versi 1.2 · 2026-11-20 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md
+> Versi 1.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md
 
 ## 1. Peta Alur per Peran
 | Peran | Alur yang dijalankan |
@@ -300,6 +300,11 @@ stateDiagram-v2
 | `uploaded` | Postingan ada di platform (dikonfirmasi API, atau ditandai Pengguna untuk manual) | — | Sistem (auto); Pengguna (manual) |
 | `failed` | `auto` saja: gagal; boleh unggah ulang (BR-009) | — | Sistem |
 
+## Keputusan implementasi (disetujui pemilik 2026-11-21)
+Keputusan yang diambil saat implementasi karena spesifikasi belum merinci; nomor K-xx sama dengan riwayat di `docs/CATATAN-SESI.md`.
+
+- **K-2** Membatalkan Job pipeline (download/transcribe/detect_layout/score_highlights seluruh stream) membuat Stream Sumber `failed` dengan pesan "Job dibatalkan." State machine §4.1 tidak mengatur ini; tanpanya stream tertahan di `downloading`/`processing` _(kode: `backend/klipin/jobs.py` (`cancel_job`))_
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] Port lokal default 8765 (bisa diubah di konfigurasi).
 - [ASUMSI] Delay player near-live ±10–30 detik dapat diterima untuk penandaan momen.
@@ -310,6 +315,7 @@ stateDiagram-v2
 ## Riwayat Perubahan
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.3 | 2026-11-21 | Keputusan implementasi disetujui pemilik (K-2): pembatalan Job pipeline membuat Stream Sumber `failed` |
 | 1.0 | 2026-11-20 | Draf awal |
 | 1.2 | 2026-11-20 | Hasil CEK #6: transisi Klip `rendering → approved` saat Job render dibatalkan; catatan render pratinjau tidak mengubah status |
 | 1.1 | 2026-11-20 | Menyesuaikan unggah multi-platform & Mode Unggah (01-prd.md v1.1): UF-04 cabang manual/otomatis, UF-05 Hubungkan Akun Unggah per platform, alur error unggah, state Unggahan untuk mode manual |

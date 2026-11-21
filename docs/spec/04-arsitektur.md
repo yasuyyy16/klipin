@@ -1,5 +1,5 @@
 # Arsitektur Sistem: Klipin
-> Versi 1.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 07-integrasi.md
+> Versi 1.4 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 07-integrasi.md
 
 ## 1. Gambaran Umum
 Klipin adalah **monolith lokal** dengan dua proses Python yang berbagi satu database SQLite dan satu folder kerja:
@@ -285,7 +285,7 @@ Paket ini tidak punya dokumen Deployment terpisah karena aplikasi hanya berjalan
 | `KLIPIN_PORT` | `8765` | Tidak | API | Port lokal |
 | `KLIPIN_HOST` | `127.0.0.1,::1` | Tidak | API | Daftar alamat loopback yang di-bind. Jangan diubah ke `0.0.0.0` (BR-012) |
 | `KLIPIN_FFMPEG_PATH` | `C:\ffmpeg\bin\ffmpeg.exe` | Tidak | Worker | Jika FFmpeg tidak ada di PATH |
-| `KLIPIN_MAX_HEAVY_JOBS` | `1` | Tidak | Worker | Bisa juga diatur di Pengaturan |
+| `KLIPIN_MAX_HEAVY_JOBS` | `1` | Tidak | Worker | Cadangan saja: dipakai hanya bila Pengaturan `max_heavy_jobs` kosong. Pengaturan (P-07) selalu menang |
 | `KLIPIN_TRANSCRIBER` | `deepgram` | Tidak | Worker | Cadangan saja: dipakai hanya bila Pengaturan `transcriber_provider` kosong. Pengaturan (P-07) selalu menang (ADR-003) |
 | `KLIPIN_LLM_PROVIDER` | `anthropic` | Tidak | Worker | Cadangan saja: dipakai hanya bila Pengaturan `llm_provider` kosong. Pengaturan selalu menang |
 | `TRANSCRIBER_API_KEY` | `xxxx` | Ya* | Worker | *Hanya jika keyring tidak tersedia; normalnya diisi lewat Pengaturan |
@@ -333,6 +333,17 @@ Mode pengembangan: `uv run klipin api --reload`, `uv run klipin worker`, dan `pn
 | Hubungkan akun gagal redirect ("redirect_uri mismatch") | Redirect URI di aplikasi developer platform tidak sama persis dengan `{KLIPIN_OAUTH_REDIRECT_BASE}/oauth/callback/{platform}` (host/port/path) | URL callback di log | Samakan URI di konsol developer platform |
 | Unggahan TikTok/YouTube selalu private | Aplikasi developer belum lolos audit platform | `uploads.posted_as_private`, pesan error platform | Ajukan audit di platform, atau pakai Mode Unggah `manual` |
 
+## Keputusan implementasi (disetujui pemilik 2026-11-21)
+Keputusan yang diambil saat implementasi karena spesifikasi belum merinci; nomor K-xx sama dengan riwayat di `docs/CATATAN-SESI.md`.
+
+- **K-4** Pengaturan `max_heavy_jobs` menang atas env `KLIPIN_MAX_HEAVY_JOBS`; env hanya cadangan bila Pengaturan kosong (disamakan dengan pemilihan penyedia, §8.2). Awalnya env eksplisit yang menang; dibalik atas keputusan pemilik 2026-11-21 _(kode: `worker/loop.py` (`max_heavy_jobs`))_
+- **K-8** `update-ytdlp` = `uv lock --upgrade-package yt-dlp` lalu `uv sync --no-install-project --inexact`; mengubah `uv.lock`. Di mode `fake` hanya simulasi _(kode: `backend/klipin/system.py`)_
+- **K-17** Job `download`: video 0–90%, chat 90–99%; checkpoint `video_done` + `video_path` (coba ulang tidak mengunduh ulang video utuh); chat replay diunduh terpisah setelah video agar kegagalannya tidak menggagalkan video; `video_width/height/fps` dari metadata yt-dlp (bisa kosong). Disk penuh → "Ruang disk habis. Kosongkan ruang lalu coba lagi." _(kode: `worker/handlers/download.py`)_
+- **K-22** Job `transcribe`: potongan i = [b_i, b_i + 10 mnt + 2 dtk] (b_i tiap 10 mnt dari awal rentang), audio FLAC mono 16 kHz diekstrak langsung per potongan (`ffmpeg -ss/-t`) ke `streams/{id}/audio/chunk_{start_ms}.flac`. "Batas potongan" untuk penjahitan = titik tengah zona tumpang tindih (b_i + 1 dtk), agar potongan kata di tepi audio tidak tercatat ganda. Label pembicara dicocokkan lewat kata sama (±300 ms) di zona tumpang tindih; tidak cocok → label baru (S3, …). Retry = 3 percobaan ulang (total 4 kiriman); semua error penyedia menandai potongan `failed`. Bahasa ditetapkan dari potongan pertama yang **berisi kata** (potongan hening tidak menetapkan bahasa) _(kode: `worker/handlers/transcribe.py`)_
+- **K-26** (ambang deteksi dikalibrasi ulang di T-062) `detect_layout`: model BlazeFace + YuNet dibundel di `backend/klipin/layout/models/` (izin pemilik 2026-11-21; sumber, lisensi, SHA256 di README folder itu); per frame MediaPipe dulu, YuNet bila MediaPipe tidak menemukan wajah/gagal dimuat (tafsiran "fallback OpenCV DNN"). Sampel merata (lebar 960 px), minimal 10 untuk video pendek; frame dibaca dengan seek OpenCV, tanpa folder `frames/`. Ambang: tanpa wajah di ≥ 90% sampel → `center_crop`; ≥ 2 wajah di ≥ 50% sampel berwajah → `podcast` (bukan `split_two`) dengan `face_a`/`face_b` = wajah + 30%; satu wajah dengan sebaran pusat ≤ 8% dan luas < 25% → `gaming`; selain itu `irl` (tanpa region). Kotak `cam` = persegi panjang tepi panel yang **sisi terlemahnya** terkuat di peta gradien rata-rata antar-frame (cadangan: wajah + 40%); `content` = sisi frame di luar kolom cam bila lebarnya ≥ 50%, selain itu seluruh frame. Kanal dengan preset default: preset Kanal dipakai, region deteksi tetap disimpan untuk stream, kecocokan (IoU) dicatat di log Job. Pesan "Wajah tidak terdeteksi…" baru di log Job; tampil di UI pada T-041. Dependensi baru: `mediapipe` (membawa `opencv-contrib-python`), `numpy` _(kode: `layout/`, `worker/handlers/detect_layout.py`)_
+- **K-27** Filtergraph preset statis (`media/ffmpeg.py`): tiap panel *cover* (region dipotong di tengahnya ke rasio panel lalu di-scale tepat, tanpa `pad`), panel ditumpuk `vstack`; offset & ukuran crop selalu genap (offset ganjil menggeser chroma yuv420p). `split_two` memakai `split_pct` (seed 50). `custom`: urutan tumpukan = urutan region yang diberikan, 1 region → penuh, 2 region → `top_pct` (default 50, belum ada di seed); penyimpanan urutan menyusul di T-034/T-042. Region wajib tidak ada → jatuh ke `center_crop` dengan alasan (`LayoutPlan.fallback_reason`) _(kode: `media/ffmpeg.py`)_
+- **K-28** Jalur crop dinamis (`layout/crop_path.py`): jendela 9:16 setinggi frame; posisi per sampel 5 fps (dibaca berurutan dengan `grab`), diinterpolasi per frame 30 fps dan dikirim ke `crop` lewat `sendcmd` (1 perintah per frame). `irl`: median 1 dtk lalu batas kecepatan `max_pan_pct_per_s`; tanpa wajah → tahan posisi terakhir (awal: tengah). `podcast`: potongan langsung ke wajah pembicara aktif, tidak lebih sering dari `switch_hold_ms`; tanpa giliran bicara → tahan. Pemetaan pembicara → wajah memakai urutan (pembicara pertama ↔ wajah paling kiri) kecuali `speaker_faces` diberikan — belum ada pencocokan gerak bibir; keterbatasan ini perlu dicek di evaluasi T-062. Muat giliran bicara dari `transcript_segments` dikerjakan di T-046 _(kode: `layout/crop_path.py`)_
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] Pengguna memasang FFmpeg sendiri (tidak dibundel) untuk menghindari isu lisensi & ukuran paket.
 - [ASUMSI] MediaPipe Face Detection tersedia untuk Python 3.11 di Windows & macOS; jika ada kendala instalasi, fallback ke detektor wajah OpenCV DNN.
@@ -343,6 +354,7 @@ Mode pengembangan: `uv run klipin api --reload`, `uv run klipin worker`, dan `pn
 ## Riwayat Perubahan
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.4 | 2026-11-21 | Keputusan implementasi disetujui pemilik (K-4, K-8, K-17, K-22, K-26, K-27, K-28): Pengaturan `max_heavy_jobs` menang atas env; update-ytdlp; detail Job download, transcribe, detect_layout; filtergraph & jalur crop |
 | 1.0 | 2026-11-20 | Draf awal |
 | 1.3 | 2026-11-21 | Keputusan pemilik saat T-024/T-026: Pengaturan menang atas env `KLIPIN_TRANSCRIBER`/`KLIPIN_LLM_PROVIDER` (env hanya cadangan); mode `fake` mencakup pengambil media berbasis fixture |
 | 1.2 | 2026-11-20 | Hasil CEK #1, #3, #8, #11: render pratinjau dibedakan lewat `jobs.purpose`; bind loopback IPv4 + IPv6; env `KLIPIN_PROVIDERS`; pertanyaan penyedia ditandai terjawab |

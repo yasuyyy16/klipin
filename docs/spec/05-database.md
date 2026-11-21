@@ -1,5 +1,5 @@
 # Skema Database: Klipin
-> Versi 1.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 04-arsitektur.md
+> Versi 1.4 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 04-arsitektur.md
 
 Database: **SQLite 3.35+** (butuh `RETURNING`), mode WAL, `PRAGMA foreign_keys = ON`, `PRAGMA busy_timeout = 5000`. Dikelola dengan SQLAlchemy 2 + Alembic. File: `{KLIPIN_HOME}/klipin.db`.
 
@@ -798,6 +798,11 @@ Saat Unggahan dibuat, nilai draf platform disalin ke `uploads.title/caption/hash
 
 Backup: SQLite online backup harian ke `backups/klipin-YYYYMMDD.db`, simpan 7 terakhir (NFR-010); backup juga dibuat sebelum setiap migrasi Alembic. File video tidak dicadangkan.
 
+## Keputusan implementasi (disetujui pemilik 2026-11-21)
+Keputusan yang diambil saat implementasi karena spesifikasi belum merinci; nomor K-xx sama dengan riwayat di `docs/CATATAN-SESI.md`.
+
+- **K-16** Jenis Pesan Chat: `liveChatTextMessageRenderer` → `text`; Paid Message/Sticker → `donation`; Membership + hadiah membership → `membership`; pesan sistem YouTube & ticker diabaikan (tidak disimpan). Chat tidak ada / gagal / VOD Kick → Pesan Chat lama dihapus dan `has_chat = 0` _(kode: `media/chat_replay.py`, `worker/handlers/download.py`)_
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] SQLite bawaan Python 3.11 di Windows/macOS sudah ≥ 3.35 dengan JSON1 (diperiksa `klipin doctor`).
 - [ASUMSI] ±70.000 baris `transcript_words` per jam audio; stream 8 jam ±560.000 baris masih aman di SQLite.
@@ -808,6 +813,7 @@ Backup: SQLite online backup harian ke `backups/klipin-YYYYMMDD.db`, simpan 7 te
 ## Riwayat Perubahan
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.4 | 2026-11-21 | Keputusan implementasi disetujui pemilik (K-16): pemetaan jenis Pesan Chat |
 | 1.0 | 2026-11-20 | Draf awal |
 | 1.3 | 2026-11-21 | Keputusan pemilik (T-030): `confirm_usage_over_min` boleh JSON `null` = konfirmasi pemakaian mati (FR-022), `0` = selalu minta; batas `max_audio_minutes_per_job` tetap berlaku |
 | 1.2 | 2026-11-20 | Hasil CEK #1, #7, #9: `jobs.purpose` + `preview_at_ms` untuk render pratinjau; seed `llm_models`, `kick_live_chat_enabled`; catatan default penyedia |

@@ -142,9 +142,15 @@ def test_heavy_slots_and_light_slot(db, monkeypatch):
     worker.shutdown()
 
 
-def test_env_max_heavy_jobs_overrides_settings(db, monkeypatch):
+def test_settings_max_heavy_jobs_win_over_env(db, monkeypatch):
     monkeypatch.setenv("KLIPIN_MAX_HEAVY_JOBS", "3")
     get_config.cache_clear()
+    assert loop.max_heavy_jobs(db) == 1  # Pengaturan (seed 1) menang
+    with db.begin() as conn:
+        conn.execute(text("UPDATE settings SET value = '2' WHERE key = 'max_heavy_jobs'"))
+    assert loop.max_heavy_jobs(db) == 2
+    with db.begin() as conn:  # Pengaturan kosong → env sebagai cadangan
+        conn.execute(text("UPDATE settings SET value = 'null' WHERE key = 'max_heavy_jobs'"))
     assert loop.max_heavy_jobs(db) == 3
 
 

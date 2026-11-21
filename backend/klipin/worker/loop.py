@@ -77,14 +77,13 @@ def claim(engine: Engine, heavy: bool) -> JobContext | None:
 
 
 def max_heavy_jobs(engine: Engine) -> int:
-    cfg = get_config()
-    # Env yang diisi eksplisit menang atas Pengaturan (04-arsitektur.md §8.2).
-    if "klipin_max_heavy_jobs" in cfg.model_fields_set:
-        return cfg.klipin_max_heavy_jobs
+    """Pengaturan `max_heavy_jobs` menang; env `KLIPIN_MAX_HEAVY_JOBS` hanya cadangan bila
+    Pengaturan kosong (04-arsitektur.md §8.2, sama dengan pemilihan penyedia)."""
     with engine.connect() as conn:
         value = conn.execute(text("SELECT value FROM settings WHERE key = 'max_heavy_jobs'")
                              ).scalar()
-    return max(1, int(_json.process_result_value(value, None) or 1))
+    setting = _json.process_result_value(value, None) if value is not None else None
+    return max(1, int(setting or get_config().klipin_max_heavy_jobs))
 
 
 def _finish(engine: Engine, ctx: JobContext, status: str, error: str | None = None) -> None:

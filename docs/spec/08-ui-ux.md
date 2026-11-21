@@ -1,5 +1,5 @@
 # UI/UX & Daftar Halaman: Klipin
-> Versi 1.1 · 2026-11-20 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 06-api.md, 07-integrasi.md
+> Versi 1.2 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 03-user-flow.md, 06-api.md, 07-integrasi.md
 
 ## 1. Prinsip Desain
 1. **Review cepat adalah inti.** Pengguna menilai puluhan Kandidat Klip per stream. Setujui/Tolak/putar harus bisa dikerjakan dengan keyboard tanpa membuka halaman lain (target: ≤ 10 detik keputusan per klip).
@@ -237,6 +237,12 @@ Warna platform hanya dipakai pada ikon platform (logo resmi tidak diubah). Font 
 | yt-dlp gagal | "Gagal membaca video. Situs mungkin berubah, coba Perbarui yt-dlp di Pengaturan." |
 | Pengingat izin konten | "Pastikan kamu punya izin untuk mengklip dan memposting ulang stream ini." |
 
+## Keputusan implementasi (disetujui pemilik 2026-11-21)
+Keputusan yang diambil saat implementasi karena spesifikasi belum merinci; nomor K-xx sama dengan riwayat di `docs/CATATAN-SESI.md`.
+
+- **K-19** P-01: tanpa thumbnail (inspect tidak mengembalikan frame); badge hanya "Kanal dikenal" (nama preset default menunggu `GET /channels`, T-034); tombol "Mulai Rekam Live" & "Pilih file dari komputer" belum ditampilkan (tanpa kontrol palsu) — URL live memberi teks penjelasan; banner izin yang ditutup diingat di `localStorage`. P-04 sementara berisi header stream + progres pipeline (`components/PipelineProgress.tsx`) sampai T-041 _(kode: `frontend/src/pages/P01Beranda.tsx`, `P04ReviewKlip.tsx`)_
+- **K-20** P-02: filter status dikelompokkan Semua / Diproses (`queued,downloading,recording,processing`) / Siap direview / Gagal; 50 per halaman; kolom ukuran = total + rincian "Sumber · Render" (ukuran segmen live menyusul T-051); jumlah Klip hanya status yang > 0 _(kode: `frontend/src/pages/P02DaftarStream.tsx`)_
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] Tema gelap saja untuk MVP; tema terang bisa ditambah lewat token yang sama.
 - [ASUMSI] Antarmuka berbahasa Indonesia saja (pengguna tunggal berbahasa Indonesia).
@@ -248,5 +254,6 @@ Warna platform hanya dipakai pada ikon platform (logo resmi tidak diubah). Font 
 ## Riwayat Perubahan
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.2 | 2026-11-21 | Keputusan implementasi disetujui pemilik (K-19, K-20): keputusan P-01 & P-02 |
 | 1.0 | 2026-11-20 | Draf awal |
 | 1.1 | 2026-11-20 | Hasil CEK #2, #10: rujukan endpoint waveform & buka folder |

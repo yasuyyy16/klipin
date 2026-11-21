@@ -1,5 +1,5 @@
 # Integrasi Pihak Ketiga: Klipin
-> Versi 2.3 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
+> Versi 2.4 · 2026-11-21 · Status: Draf · Dokumen terkait: 01-prd.md, 02-requirements.md, 04-arsitektur.md, 05-database.md, 06-api.md
 
 Fakta tentang layanan pihak ketiga di dokumen ini dicek pada 2026-11-20 dan **bisa berubah**. Harga tidak ditulis; cek di situs penyedia. Setiap integrasi dibungkus adapter (ADR-003) agar mudah diganti.
 
@@ -238,6 +238,17 @@ Klipin tidak menampilkan harga; dialog konfirmasi pemakaian dan Pengaturan hanya
 | AssemblyAI | https://www.assemblyai.com/pricing |
 | Anthropic (Claude API) | https://claude.com/pricing#api |
 
+## Keputusan implementasi (disetujui pemilik 2026-11-21)
+Keputusan yang diambil saat implementasi karena spesifikasi belum merinci; nomor K-xx sama dengan riwayat di `docs/CATATAN-SESI.md`.
+
+- **K-11** `media/ytdlp.py`: URL disaring dulu per host (youtube.com, www/m/music.youtube.com, youtu.be, kick.com, www.kick.com) sebelum yt-dlp dipanggil, lalu hasilnya wajib `extractor_key` `Youtube`/`Kick`/`KickVOD` dan bukan playlist; selain itu `URL_NOT_SUPPORTED`. Hasil unduhan selalu di-remux ke MP4 (`FFmpegVideoRemuxer`) bila format tunggal bukan MP4 _(kode: `backend/klipin/media/ytdlp.py`)_
+- **K-12** `estimated_size_bytes` = jumlah `filesize`/`filesize_approx` format terpilih (fallback `tbr` × durasi); `null` bila ada yang tak diketahui. Saat `null`, cek disk FR-001 **dilewati** (impor tetap jalan; disk penuh saat unduh ditangani Job) _(kode: `media/ytdlp.py`, `streams.py` (`check_disk`))_
+- **K-15** Kata reaksi (FR-010): kata alfanumerik cocok sebagai kata utuh tanpa beda huruf besar/kecil (`lol` cocok di "lol bang", tidak di "lolos"; `wkwk` tidak cocok "wkwkwkwk"); emoji/simbol cocok sebagai potongan teks. Dihitung saat impor _(kode: `media/chat_replay.py` (`reaction_matcher`))_
+- **K-21** `Transcriber.transcribe(AudioChunk) → TranscriptionResult` (utterance + kata, waktu **relatif potongan**, label pembicara lokal); retry & penjahitan di handler (T-027). Error: `TranscriberAuthError` (pesan FR-005), `TranscriberTransientError` (429/5xx/timeout), `TranscriberBadAudioError` (400). API key dicek di factory **juga di mode fake** (TC-014): dev/E2E mode fake perlu isi API key sembarang. `FakeTranscriber`: naskah Indonesia tetap di kode (kalimat tiap 6 dtk absolut, kata tiap 1 dtk, pembicara "0"/"1", tiap kata ke-7 confidence 0,55), `silent_ranges`, kegagalan per indeks potongan _(kode: `providers/transcriber/`)_
+- **K-23** Adapter Deepgram: `Content-Type: audio/flac` (contoh di dokumentasi hanya wav/mp3; FLAC tercantum sebagai `encoding` yang didukung, belum diuji ke API sungguhan); bahasa terdeteksi `en-US` dinormalkan ke `en`; tanpa `results.utterances` kata dikelompokkan per pembicara berurutan; 408/422 dianggap sementara; 402 → pesan "Kredit Deepgram habis…". Dependensi baru: `httpx` (runtime), `respx` (dev) _(kode: `providers/transcriber/deepgram.py`)_
+- **K-24** `Transcriber.transcribe(chunk, *, should_cancel=None)`: penyedia asinkron mengecek batal tiap ≤ 0,5 dtk (FR-023). AssemblyAI: `speech_models=["universal-2"]` eksplisit (dukungan `id` hanya terkonfirmasi di sana); transkrip + unggahan dihapus dari AssemblyAI setelah selesai/gagal/batal; status `error` → potongan `failed` (bukan retry); 403 diperlakukan seperti 401 sesuai INT-04 walau AssemblyAI juga memakai 403 untuk batas 20.000 request/5 menit; polling maks. 30 menit lalu dianggap sementara; wilayah US saja _(kode: `providers/transcriber/assemblyai.py`)_
+- **K-33** `HighlightJudge` (`providers/llm/`): SDK resmi `anthropic` 2.x, `messages.create` + `output_config.format` (JSON schema tanpa batas angka; batas dicek Pydantic: skor 0–100, kategori enum, `reason` ≤ 200, `title` ≤ 100 karakter); `max_tokens` 300 dan `effort: low` (kontrol biaya INT-05) — **risiko**: model yang thinking-nya selalu aktif bisa terpotong di 300 token (dianggap `invalid` lalu dicoba ulang 1×); perlu dicek dengan panggilan sungguhan (butuh izin biaya). `max_tokens` terpotong → `invalid`; `refusal` → `failed` tanpa coba ulang; 429/5xx/529/jaringan → 3× backoff 2/4/8 + jitter (retry SDK dimatikan); 400/401/403/404 → `JudgeUnavailable` (seluruh Job memakai skor parsial, sesuai Fallback INT-05). Tanpa API key LLM atau tanpa `llm_models.judge_highlight` → `JudgeUnavailable` (bukan gagal Job). Tes koneksi Anthropic: `GET /v1/models?limit=1` (tanpa biaya token). Prompt: transkrip dipangkas 6.000 karakter (±1.500 token); "±90 detik" ditafsirkan pemanggil (T-039). Server-side `fallbacks` tidak dipakai karena model dipilih Pengguna. Dependensi baru: `anthropic` _(kode: `providers/llm/`)_
+
 ## Asumsi & Pertanyaan Terbuka
 - [ASUMSI] Deepgram dipilih sebagai default karena request sinkron cocok dengan checkpoint per chunk; keputusan bisa dibalik setelah uji A/B kualitas Bahasa Indonesia (09-testing.md).
 - [ASUMSI] Chunk audio 10 menit berada di bawah batas ukuran/durasi request penyedia; batas pasti dicek saat implementasi.
@@ -272,6 +283,7 @@ Klipin tidak menampilkan harga; dialog konfirmasi pemakaian dan Pengaturan hanya
 ## Riwayat Perubahan
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 2.4 | 2026-11-21 | Keputusan implementasi disetujui pemilik (K-11, K-12, K-15, K-21, K-23, K-24, K-33): penyaringan URL yt-dlp, perkiraan ukuran, kata reaksi, antarmuka Transcriber, detail adapter Deepgram/AssemblyAI/Anthropic |
 | 1.0 | 2026-11-20 | Draf awal |
 | 2.3 | 2026-11-21 | Tautan halaman harga resmi untuk FR-022 (T-030) |
 | 2.2 | 2026-11-21 | INT-04 AssemblyAI (T-029): alur unggah/transkrip/polling/hapus, `speech_models` Universal-2 eksplisit, aturan `language_code` vs `language_detection`, format error & endpoint tes koneksi dari dokumentasi resmi |
